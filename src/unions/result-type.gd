@@ -186,14 +186,14 @@ func unwrap_or_else(op: Callable) -> Variant:
 ## Func() -> OptionalType<ResultType<T, E>>
 func transpose() -> OptionalType:
     if _ok and _held == null:
-        return OptionalType.new(null)
+        return OptionalType.new(ResultType.new(true, null))
     else:
         return OptionalType.new(self)
 
 ## Func(DeepDuplicateMode) -> OptionalType<ResultType<T, E>>
 func transpose_as_dupe(deep_subresources_mode: DeepDuplicateMode = DeepDuplicateMode.DEEP_DUPLICATE_INTERNAL) -> OptionalType:
     if _ok and _held == null:
-        return OptionalType.new(null)
+        return OptionalType.new(ResultType.new(true, null))
     else:
         return OptionalType.new(self.duplicate_deep(deep_subresources_mode))
 
