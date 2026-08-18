@@ -25,6 +25,8 @@ In particular:
 - **No type safety for callables.** Example: A function that takes a callable {which takes `void` and returns `float`}, and returns `float`, has to be written as `func(f: Callable) -> float`, erasing the compile-time function signature information of `Callable`, and raising ambiguity about what the `Callable` should take and return.
 - **No explicit information about async/yielding functions.** Example: A function could use `await` in the body, but for the caller, it is hard to tell if it does or not.
 
+The ultimate goal of this guideline is to improve compile-time type safety for developers without compromising on GDScript's dynamicness.
+
 #### What About Owned Values vs References?
 
 **TL;DR: Worry about it the same way as you would do in contemporary GDScript.**
@@ -42,6 +44,10 @@ Therefore, **references will not be marked in function signatures** due to it be
 Due to the above reason, it's hard to rigidly keep track of what's really mutable, immutable, will mutate or will not mutate. Even if a function doesn't mutate a parameter, or a method doesn't mutate the state of the associated instance, multiple variables may hold a reference to them, so mutation could happen anywhere for things that get passed by reference.
 
 Therefore, **mutability will not be marked in function signatures**, but any functions that mutate something will be **documented** as such **seperately**.
+
+#### Representation of Self
+
+`self` **is not represented** in the function signature. It would be needless boilerplate in a fully object-oriented language with poor support for mutability and ownership semantics.
 
 #### Why Not Just Use Rust, C# or C++ Instead?
 
