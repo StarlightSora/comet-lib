@@ -191,16 +191,16 @@ print(str(execute_with(lambda, 1))) # "43"
 
 Complex type definitions can get long. This is when type aliases are convenient.
 
-We use the `TYPEALIAS` keyword, then the alias name, then the actual type definition to do this: `TYPEALIAS AliasName: SomeGeneric or SomethingElse ... where SomeType: impl some_method ...`
+We use the `TYPEALIAS` keyword, then the alias name, then the actual type definition to do this: `TYPEALIAS AliasName: SomeGeneric or SomethingElse ... where SomeType: impl some_method ...`, then we use `AliasName` elsewhere whenever we need to mention the alias.
 
-Bounds can be aliased as well. We use the `BINDALIAS` keyword, then the alias name, then the actual binding definition to do this: `BINDALIAS BindingName: impl some_method and has some_value(SomeType) and extends SomeClass and ...`
+Bounds can be aliased as well. We use the `BINDALIAS` keyword, then the alias name, then the actual binding definition to do this: `BINDALIAS BindingName: impl some_method and has some_value(SomeType) and extends SomeClass and ...`, then we use `BindingName` elsewhere whenever we need to mention the alias.
 
-Whenever you need to look up a definition of an alias, you can use `CTRL + SHIFT + F` (find all within project) and look for `TYPEALIAS YourAliasName` or `BINDALIAS YourBindingName`, and you should be able to locate it.
+Whenever you need to look up a definition of an alias, you can use `CTRL + SHIFT + F` (find all within project) and look for `TYPEALIAS YourAliasName:` or `BINDALIAS YourBindingName:`, and you should be able to locate it immediately.
 
 ```gd
 ## BINDALIAS QuackBinding: impl quack and has id
 ## TYPEALIAS NumberType: int or float
-## TYPEALIAS MyDuck: T where T: QuackBinding or has Bird
+## TYPEALIAS MyDuck: T where T: QuackBinding or extends Bird
 
 ## (NumberType, NumberType) -> bool
 fn comp(lhs: Variant, rhs: Variant) -> bool:
