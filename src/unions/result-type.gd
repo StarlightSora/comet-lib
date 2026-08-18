@@ -4,42 +4,42 @@ extends Resource
 var _held: Variant
 var _ok: bool
 
-## Func(bool, T || E) -> ResultType<T, E>
+## (bool, T or E) -> ResultType<T, E>
 func _init(is_okay: bool, content: Variant) -> void:
     _ok = is_okay
     _held = content
 
-## Func() -> bool
+## () -> bool
 func is_ok() -> bool:
     return _ok
 
-## Func(Func(T) -> bool) -> bool
+## (Func(T) -> bool) -> bool
 func is_ok_and(f: Callable) -> bool:
     if _ok:
         return f.call(_held) as bool
     else:
         return false
 
-## Func() -> bool
+## () -> bool
 func is_err() -> bool:
     return not _ok
 
-## Func(Func(E) -> bool) -> bool
+## (Func(E) -> bool) -> bool
 func is_err_and(f: Callable) -> bool:
     if _ok:
         return false
     else:
         return f.call(_held) as bool
 
-## Func() -> OptionalType<T>
+## () -> OptionalType<T>
 func ok() -> OptionalType:
     if _ok:
         return OptionalType.new(_held)
     else:
         return OptionalType.new(null)
 
-## Func(DeepDuplicateMode) -> OptionalType<T>
-## where T: impl duplicate_deep || impl Copy
+## (DeepDuplicateMode) -> OptionalType<T>
+## where T: impl duplicate_deep or impl Copy
 func ok_as_dupe(deep_subresources_mode: DeepDuplicateMode = DeepDuplicateMode.DEEP_DUPLICATE_INTERNAL) -> OptionalType:
     if _ok:
         if _held.has_method("duplicate_deep"):
@@ -49,15 +49,15 @@ func ok_as_dupe(deep_subresources_mode: DeepDuplicateMode = DeepDuplicateMode.DE
     else:
         return OptionalType.new(null)
 
-## Func() -> new OptionalType<E>
+## () -> new OptionalType<E>
 func err() -> OptionalType:
     if _ok:
         return OptionalType.new(null)
     else:
         return OptionalType.new(_held)
 
-## Func(DeepDuplicateMode) -> OptionalType<new E>
-## where E: impl duplicate_deep || impl Copy
+## (DeepDuplicateMode) -> OptionalType<E>
+## where E: impl duplicate_deep or impl Copy
 func err_as_dupe(deep_subresources_mode: DeepDuplicateMode = DeepDuplicateMode.DEEP_DUPLICATE_INTERNAL) -> OptionalType:
     if _ok:
         return OptionalType.new(null)
@@ -67,45 +67,45 @@ func err_as_dupe(deep_subresources_mode: DeepDuplicateMode = DeepDuplicateMode.D
         else:
             return OptionalType.new(_held)
 
-## Func(Func(T) -> U) -> ResultType<U, E>
+## (Func(T) -> U) -> ResultType<U, E>
 func map(op: Callable) -> ResultType:
     if _ok:
         return ResultType.new(true, op.call(_held))
     else:
         return self
 
-## Func(U, Func(T) -> U) -> U
+## (U, Func(T) -> U) -> U
 func map_or(default: Variant, f: Callable) -> Variant:
     if _ok:
         return f.call(_held)
     else:
         return default
 
-## Func(Func(E) -> U, Func(T) -> U) -> U
+## (Func(E) -> U, Func(T) -> U) -> U
 func map_or_else(d: Callable, f: Callable) -> Variant:
     if _ok:
         return f.call(_held)
     else:
         return d.call(_held)
 
-## Func(Func(E) -> F) -> ResultType<T, F>
+## (Func(E) -> F) -> ResultType<T, F>
 func map_err(op: Callable) -> ResultType:
     if _ok:
         return self
     else:
         return ResultType.new(false, op.call(_held))
 
-## Func(Func(T) -> void) -> void
+## (Func(T) -> void) -> void
 func inspect(f: Callable) -> void:
     if _ok:
         f.call(_held)
 
-## Func(Func(E) -> void) -> void
+## (Func(E) -> void) -> void
 func inspect_err(f: Callable) -> void:
     if not _ok:
         f.call(_held)
 
-## Func(String) -> T
+## (String) -> T
 func expect(msg: String) -> Variant:
     if _ok:
         return _held
@@ -114,7 +114,7 @@ func expect(msg: String) -> Variant:
         assert(false, msg)
         return _held
 
-## Func() -> T
+## () -> T
 func unwrap() -> Variant:
     if _ok:
         return _held
@@ -123,7 +123,7 @@ func unwrap() -> Variant:
         assert(false, "Cast failed!")
         return _held
 
-## Func(String) -> E
+## (String) -> E
 func expect_err(msg: String) -> Variant:
     if _ok:
         push_error(msg)
@@ -132,7 +132,7 @@ func expect_err(msg: String) -> Variant:
     else:
         return _held
 
-## Func() -> E
+## () -> E
 func unwrap_err() -> Variant:
     if _ok:
         push_error("Cast failed!")
@@ -141,63 +141,63 @@ func unwrap_err() -> Variant:
     else:
         return _held
 
-## Func(ResultType<U, E>) -> ResultType<U, E>
+## (ResultType<U, E>) -> ResultType<U, E>
 func and_(res: ResultType) -> ResultType:
     if _ok:
         return res
     else:
         return self
 
-## Func(Func(T) -> ResultType<U, E>) -> ResultType<U, E>
+## (Func(T) -> ResultType<U, E>) -> ResultType<U, E>
 func and_then(op: Callable) -> ResultType:
     if _ok:
         return op.call(_held)
     else:
         return self
 
-## Func(ResultType<T, F>) -> ResultType<T, F>
+## (ResultType<T, F>) -> ResultType<T, F>
 func or_(res: ResultType) -> ResultType:
     if _ok:
         return self
     else:
         return res
 
-## Func(Func(E) -> ResultType<T, F>) -> ResultType<T, F>
+## (Func(E) -> ResultType<T, F>) -> ResultType<T, F>
 func or_else(op: Callable) -> ResultType:
     if _ok:
         return self
     else:
         return op.call(_held)
 
-## Func(T) -> T
+## (T) -> T
 func unwrap_or(default: Variant) -> Variant:
     if _ok:
         return self._held
     else:
         return default
 
-## Func(Func(E) -> T) -> T
+## (Func(E) -> T) -> T
 func unwrap_or_else(op: Callable) -> Variant:
     if _ok:
         return self._held
     else:
         return op.call(_held)
 
-## Func() -> OptionalType<ResultType<T, E>>
+## () -> OptionalType<ResultType<T, E>>
 func transpose() -> OptionalType:
     if _ok and _held == null:
         return OptionalType.new(null)
     else:
         return OptionalType.new(self)
 
-## Func(DeepDuplicateMode) -> OptionalType<ResultType<T, E>>
+## (DeepDuplicateMode) -> OptionalType<ResultType<T, E>>
 func transpose_as_dupe(deep_subresources_mode: DeepDuplicateMode = DeepDuplicateMode.DEEP_DUPLICATE_INTERNAL) -> OptionalType:
     if _ok and _held == null:
         return OptionalType.new(null)
     else:
         return OptionalType.new(self.duplicate_deep(deep_subresources_mode))
 
-## Func() -> ResultType<T, E>
+## () -> ResultType<T, E>
 func flatten() -> ResultType:
     if _ok:
         if _held is ResultType:

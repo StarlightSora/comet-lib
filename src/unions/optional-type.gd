@@ -4,34 +4,34 @@ extends Resource
 var _held: Variant
 var _exists: bool
 
-## Func(T) -> OptionalType<T>
+## (T) -> OptionalType<T>
 func _init(content: Variant) -> void:
     _held = content
     _exists = content != null
 
-## Func() -> bool
+## () -> bool
 func is_some() -> bool:
     return _exists
 
-## Func(Func(T) -> bool) -> bool
+## (Func(T) -> bool) -> bool
 func is_some_and(callable: Callable) -> bool:
     if _exists:
         return callable.call(_held) as bool
     else:
         return false
 
-## Func() -> bool
+## () -> bool
 func is_none() -> bool:
     return not _exists
 
-## Func(Func(T) -> bool) -> bool
+## (Func(T) -> bool) -> bool
 func is_none_or(callable: Callable) -> bool:
     if _exists:
         return callable.call(_held) as bool
     else:
         return true
 
-## Func(String) -> T
+## (String) -> T
 func expect(msg: String) -> Variant:
     if _exists:
         return _held
@@ -40,7 +40,7 @@ func expect(msg: String) -> Variant:
         assert(false, msg)
         return _held
 
-## Func() -> T
+## () -> T
 func unwrap() -> Variant:
     if _exists:
         return _held
@@ -49,75 +49,75 @@ func unwrap() -> Variant:
         assert(false, "Cast failed!")
         return _held
 
-## Func(T) -> T
+## (T) -> T
 func unwrap_or(default: Variant) -> Variant:
     if _exists:
         return _held
     else:
         return default
 
-## Func(Func() -> T) -> T
+## (Func() -> T) -> T
 func unwrap_or_else(f: Callable) -> Variant:
     if _exists:
         return _held
     else:
         return f.call()
 
-## Func(Func(T) -> U) -> OptionalType<U>
+## (Func(T) -> U) -> OptionalType<U>
 func map(f: Callable) -> OptionalType:
     if _exists:
         return f.call(_held)
     else:
         return self
 
-## Func(Func(T) -> void) -> void
+## (Func(T) -> void) -> void
 func inspect(f: Callable) -> void:
     if _exists:
         f.call(_held)
 
-## Func(U, Func(T) -> U) -> U
+## (U, Func(T) -> U) -> U
 func map_or(default: Variant, f: Callable) -> Variant:
     if _exists:
         return f.call(_held)
     else:
         return default
 
-## Func(Func() -> U, Func(T) -> U) -> U
+## (Func() -> U, Func(T) -> U) -> U
 func map_or_else(d: Callable, f: Callable) -> Variant:
     if _exists:
         return f.call(_held)
     else:
         return d.call()
 
-## Func(E) -> Result<T, E>
+## (E) -> Result<T, E>
 func ok_or(err: Variant) -> ResultType:
     if _exists:
         return ResultType.new(true, _held)
     else:
         return ResultType.new(false, err)
 
-## Func(Func() -> E) -> Result<T, E>
+## (Func() -> E) -> Result<T, E>
 func ok_or_else(e: Callable) -> ResultType:
     if _exists:
         return ResultType.new(true, _held)
     else:
         return ResultType.new(false, e.call())
 
-## Func(OptionalType<U>) -> OptionalType<U>
+## (OptionalType<U>) -> OptionalType<U>
 func and_(optb: OptionalType) -> OptionalType:
     if _exists:
         return optb
     else:
         return self
 
-## Func(Func(T) -> U) -> OptionalType<U>
+## (Func(T) -> U) -> OptionalType<U>
 func and_then(f: Callable) -> OptionalType:
     if _exists:
         return f.call(_held)
     else:
         return self
 
-## Func(Func(T) -> bool) -> OptionalType<T>
+## (Func(T) -> bool) -> OptionalType<T>
 func filter(predicate: Callable) -> OptionalType:
     if _exists:
         if predicate.call(_held):
@@ -127,21 +127,21 @@ func filter(predicate: Callable) -> OptionalType:
     else:
         return self
 
-## Func(OptionalType<T>) -> OptionalType<T>
+## (OptionalType<T>) -> OptionalType<T>
 func or_(optb: OptionalType) -> OptionalType:
     if _exists:
         return self
     else:
         return optb
 
-## Func(Func() -> OptionalType<T>) -> OptionalType<T>
+## (Func() -> OptionalType<T>) -> OptionalType<T>
 func or_else(f: Callable) -> OptionalType:
     if _exists:
         return self
     else:
         return f.call()
 
-## Func(OptionalType<T>) -> OptionalType<T>
+## (OptionalType<T>) -> OptionalType<T>
 func xor(optb: OptionalType) -> OptionalType:
     if _exists and not optb._exists:
         return self
@@ -150,13 +150,13 @@ func xor(optb: OptionalType) -> OptionalType:
     else:
         return OptionalType.new(null)
 
-## Func(T) -> T
+## (T) -> T
 func insert(value: Variant) -> Variant:
     _exists = true
     _held = value
     return _held
 
-## Func(T) -> T
+## (T) -> T
 func get_or_insert(value: Variant) -> Variant:
     if _exists:
         return _held
@@ -165,7 +165,7 @@ func get_or_insert(value: Variant) -> Variant:
         _held = value
         return _held
 
-## Func(Func() -> T) -> T
+## (Func() -> T) -> T
 func get_or_insert_with(f: Callable) -> Variant:
     if _exists:
         return _held
@@ -174,7 +174,7 @@ func get_or_insert_with(f: Callable) -> Variant:
         _held = f.call()
         return _held
 
-## Func() -> OptionalType<T>
+## () -> OptionalType<T>
 func take() -> OptionalType:
     if _exists:
         var temp = self.duplicate()
@@ -184,7 +184,7 @@ func take() -> OptionalType:
     else:
         return self
 
-## Func(Func(T) -> bool) -> OptionalType<T>
+## (Func(T) -> bool) -> OptionalType<T>
 func take_if(predicate: Callable) -> OptionalType:
     if _exists:
         if predicate.call(_held):
@@ -197,14 +197,14 @@ func take_if(predicate: Callable) -> OptionalType:
     else:
         return self
 
-## Func(T) -> OptionalType<T>
+## (T) -> OptionalType<T>
 func replace(value: Variant) -> OptionalType:
     var temp = self.duplicate()
     _exists = true
     _held = value
     return temp
 
-## Func() -> ResultType<OptionalType<T>, E>
+## () -> ResultType<OptionalType<T>, E>
 func transpose() -> ResultType:
     if _exists:
         if _held is ResultType:
@@ -219,7 +219,7 @@ func transpose() -> ResultType:
     else:
         return ResultType.new(true, OptionalType.new(null))
 
-## Func(DeepDuplicateMode) -> ResultType<OptionalType<T>, E>
+## (DeepDuplicateMode) -> ResultType<OptionalType<T>, E>
 ## where T: impl duplicate_deep || impl Copy
 func transpose_as_dupe(deep_subresources_mode: DeepDuplicateMode = DeepDuplicateMode.DEEP_DUPLICATE_INTERNAL) -> ResultType:
     if _exists:
@@ -238,7 +238,7 @@ func transpose_as_dupe(deep_subresources_mode: DeepDuplicateMode = DeepDuplicate
     else:
         return ResultType.new(true, OptionalType.new(null))
 
-## Func() -> OptionalType<T>
+## () -> OptionalType<T>
 func flatten() -> OptionalType:
     if _exists:
         if _held is OptionalType:
