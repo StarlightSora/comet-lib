@@ -428,7 +428,7 @@ func fn_5(in: Variant) -> Variant:
     if in.has_method("duplicate_deep"):
         return OptionalType.new(in.duplicate_deep())
     else:
-        return OptionalType.new(_held)
+        return OptionalType.new(in)
 ```
 
 # Inspiration
