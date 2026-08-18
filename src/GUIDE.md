@@ -50,7 +50,7 @@ You absolutely could if you want true type safety, but these languages have a st
 
 #### Unbound Generics
 
-Generic types are typically denoted as `T`, `U`, `E`, `F` ... and do not exist as a concrete time in Godot. Whatever you pass becomes the concrete type in runtime.
+Generic types are typically denoted as `T`, `U`, `E`, `F` ... and do not exist as a concrete type in Godot. Whatever you pass becomes the concrete type in runtime.
 
 Since Godot does not support generic types, they are actually passed as `Variant`, but we specify generic types in function signature documentations for clarity.
 
