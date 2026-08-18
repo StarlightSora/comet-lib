@@ -76,7 +76,7 @@ Generic types can be bound to certain restrictions. This is needed when the func
 
 `(T) -> T where T: impl method_1 and has property_1(TypeOfProperty) and extends Class1 and ...`
 
-- After the `where` keyword is where the binding starts.
+- After the `where T:` is where the binding starts for `T`.
 - `impl method_1` means `T` must have a method called `method_1`.
 - `has property_1(TypeOfProperty)` means `T` must have a property called `property_1`, and its type is `TypeOfProperty`.
 - `extends Class1` means `T` must extend (inherit from) `Class1`.
@@ -151,7 +151,7 @@ func make_array(a: Variant, b: Variant, c: Variant) -> Array[Variant]:
 print(str(make_array("x", "y", "z")[1])) # "y"
 
 ## (OptionalType<T>, E, bool) -> ResultType<OptionalType<T>, E>
-func option_in_result(a: OptionalType, b: Variant, ok: bool):
+func option_in_result(a: OptionalType, b: Variant, ok: bool) -> ResultType:
     if ok:
         return ResultType.new(true, a)
     else:
@@ -185,6 +185,48 @@ var lambda := func(i: int) -> int:
     return i + 42
 
 print(str(execute_with(lambda, 1))) # "43"
+```
+
+## Type Aliases
+
+Complex type definitions can get long. This is when type aliases are convenient.
+
+We use the `_ALIAS_` keyword, then the alias name, then the actual definition to do this: `_ALIAS_ AliasName: SomeGeneric or SomethingElse ... where SomeType: impl some_method ...`
+
+Whenever you need to look up a definition of an alias, you can use `CTRL + SHIFT + F` (find all within project) and look for `_ALIAS_ YourAliasName`, and you should be able to locate it.
+
+```gd
+## _ALIAS_ NumberType: int or float
+## _ALIAS_ MyDuck: T
+## where T: impl quack and has id
+
+## (NumberType, NumberType) -> bool
+fn comp(lhs: Variant, rhs: Variant) -> bool:
+    if lhs > rhs:
+        return true
+    else:
+        return false
+
+print(str(comp(12, 34))) # "false"
+print(str(comp(56.78, 12.34))) # "true"
+
+## (MyDuck) -> void
+fn try_quack(probably_duck: Variant) -> void:
+    if probably_duck.has_method("quack"):
+        if "id" in probably_duck:
+            print(id + " goes...")
+            probably_duck.quack()
+            return
+    push_error("Cast failed!")
+    assert(false, "Cast failed!")
+
+class_name Duck
+extends Resource
+var id = "asdf"
+func quack() -> void:
+    print("Quack!")
+
+do_quack(Duck.new()) # "asdf goes...\nQuack!"
 ```
 
 # More Examples
