@@ -6,8 +6,8 @@ extends Resource
 @export var _held: Variant
 @export var _ok: bool
 
-## (bool, T? or E?) -> ResultType<T, E>
-func _init(is_okay: bool, content: Variant) -> void:
+## (bool?, T? or E?) -> ResultType<T, E>
+func _init(is_okay: bool = false, content: Variant = null) -> void:
     _ok = is_okay
     _held = content
 

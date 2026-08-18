@@ -7,7 +7,7 @@ extends Resource
 @export var _exists: bool
 
 ## (T?) -> OptionalType<T>
-func _init(content: Variant) -> void:
+func _init(content: Variant = null) -> void:
     _held = content
     _exists = content != null
 
