@@ -1,10 +1,12 @@
+## A class used to represent success/error states in a type-safer and scaleable way.
+
 class_name ResultType
 extends Resource
 
 var _held: Variant
 var _ok: bool
 
-## (bool, T or E) -> ResultType<T, E>
+## (bool, T? or E?) -> ResultType<T, E>
 func _init(is_okay: bool, content: Variant) -> void:
     _ok = is_okay
     _held = content
@@ -105,7 +107,7 @@ func inspect_err(f: Callable) -> void:
     if not _ok:
         f.call(_held)
 
-## (String) -> T
+## canThrow (String) -> T
 func expect(msg: String) -> Variant:
     if _ok:
         return _held
@@ -114,7 +116,7 @@ func expect(msg: String) -> Variant:
         assert(false, msg)
         return _held
 
-## () -> T
+## canThrow () -> T
 func unwrap() -> Variant:
     if _ok:
         return _held
@@ -123,7 +125,7 @@ func unwrap() -> Variant:
         assert(false, "Cast failed!")
         return _held
 
-## (String) -> E
+## canThrow (String) -> E
 func expect_err(msg: String) -> Variant:
     if _ok:
         push_error(msg)
@@ -132,7 +134,7 @@ func expect_err(msg: String) -> Variant:
     else:
         return _held
 
-## () -> E
+## canThrow () -> E
 func unwrap_err() -> Variant:
     if _ok:
         push_error("Cast failed!")

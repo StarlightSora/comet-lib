@@ -25,17 +25,23 @@ In particular:
 - **No type safety for callables.** Example: A function that takes a callable {which takes `void` and returns `float`}, and returns `float`, has to be written as `func(f: Callable) -> float`, erasing the compile-time function signature information of `Callable`, and raising ambiguity about what the `Callable` should take and return.
 - **No explicit information about async/yielding functions.** Example: A function could use `await` in the body, but for the caller, it is hard to tell if it does or not.
 
-The ultimate goal of this guideline is to improve compile-time type safety for developers without compromising on GDScript's dynamicness.
+The ultimate goal of the syntax is to improve type safety for developers without compromising on GDScript's dynamicness by addressing all of these issues in the documentation level.
 
-#### What About Owned Values vs References?
+CometLib's documentation follows this syntax. You are encouraged to follow this for your own projects as well.
 
-**TL;DR: Worry about it the same way as you would do in contemporary GDScript.**
+#### What About Owned Values, References and Moves?
+
+**TL;DR: Worry about it the same way as you would do in contemporary GDScript. And don't worry about moves.**
 
 GDScript uses reference counting for automatic memory management. Because of this, the usual rules of ownership semantics from Rust does not apply here.
 
-In addition, primitive types get passed by value (by implicit copies), while others typically get passed by reference. This is determined at runtime for generics (which are actually just `Variant`s).
+In addition, primitive types get passed by **value** (via implicit **copies**), while others typically get passed by **reference**. This is determined at runtime for generics (which are actually just `Variant`s).
 
-Therefore, **references will not be marked in function signatures** due to it being practically impossible to denote. You need to be aware of whether your concrete types gets passed by value or reference.
+Since complex types (`Object`s, `Array`, `Dictionary` etc) are almost always passed by reference, move semantics don't really apply, either. **Almost all functions will never consume its parameter(s)**. The ones that *do* will explicitly have to call `free` to consume the incoming reference, making any potential variables that held a reference to it to hold `null` instead. Such functions should be documented seperately about said behavior.
+
+Therefore, **references** (`&`) **will not be marked in function signatures** due to it being practically impossible to denote. You need to be aware of whether your concrete types gets passed by value or reference.
+
+Functions that explicitly return a deep-copied reference to a complex type (so that mutating it won't affect other existing references) will generally have the `_as_dup` suffix on its function name, or have it documented separately. **Most functions returning complex types return something containing existing references**, even if it is wrapped in a new type, so mutating the returned reference may cause unexpected behavior upstream. Use `Object.duplicate_deep` if you need a new reference of an existing complex type.
 
 #### What About Mutability vs Immutability?
 
@@ -47,7 +53,7 @@ Therefore, **mutability will not be marked in function signatures**, but any fun
 
 #### Representation of Self
 
-`self` **is not represented** in the function signature. It would be needless boilerplate in a fully object-oriented language with poor support for mutability and ownership semantics.
+`self` **is not represented** in the function signature. It is completely redundant in a fully object-oriented language with poor support for mutability and ownership semantics.
 
 #### Why Not Just Use Rust, C# or C++ Instead?
 
@@ -140,7 +146,7 @@ print(str(fn_1(12.34))) # "12.34"
 print(str(fn_1(5678))) # "5678"
 ```
 
-If you need to enforce type identicality (i.e. a function accepts two int or floats, but both arguments must have the same type), use generic typing, specifically with the "where-union pattern":
+If you need to enforce type identicality (i.e. a function accepts two int or floats, but both arguments must have the same type), use generic typing, specifically with the **"where-union pattern"**:
 
 ```gd
 ## (T, T) -> T
@@ -264,7 +270,7 @@ some_func(of_type_1, of_type_1) # This is OK
 some_func(of_type_1, of_type_2) # This is *NOT* OK
 ```
 
-A drawback of aliases is that they add another layer of indirection that the IDE cannot automatically resolve. Best practice is to use aliases only for very complex types, or union types used often. The below example likely does not require aliases, but is used here for demonstration.
+A drawback of aliases is that they add another layer of indirection that the IDE cannot automatically resolve. Best practice is to use aliases only for very complex types, or types that are used often. The below example likely does not require aliases, but is used here for demonstration.
 
 ```gd
 ## BINDALIAS QuackBinding: impl quack and has id
@@ -334,6 +340,66 @@ print("Start")
 print(await sleep_and_print(2.0))
 ```
 
+## Nullables / `null`
+
+The library prefers to use `OptionalType<T>` to represent nullables instead, to make nullability explicit. However, if representation of a value possibly being `null` directly is required (Godot-native representation), we use the `?` suffix, as such: `SomeType?`
+
+This is necessary when interfacing with some native Godot APIs, other libraries, or writing extremely performance-critical/memory-heavy code.
+
+```gd
+# Preferred representation
+var maybe_int: OptionalType = OptionalType.new(42) ## OptionalType<int>
+
+# Godot-native representation
+var maybe_int: int = 42 ## int?
+```
+
+## Error Handling
+
+The library prefers to use `ResultType<T, E>` to represent success/fail states, instead of using nullables, union types or throwing if possible. `T` is the type of the success value, which is some appropriate type in the given context, and `E` is the type the failure value, which is typically a `String` or `Enum`. Refer to `core_types/result_type.gd` for more information. If `E` is an `Enum`, a `const Array[String]` is usually present in the same class as well for reflection of the `Enum` value.
+
+For cases that do not need to represent specific error reasons, `OptionalType<T>` is used instead. Refer to `core_types/optional_type.gd` for more information.
+
+If a function does *need* to throw, it does so by using `push_error(reason)` then `assert(false, reason)`. Throwing is only done for unrecoverable error states. Note that `assert` is a no-op in release builds, and **may result in the function returning a different type than the function signature promised** instead of crashing the thread!
+
+**Functions that can throw are prefixed with `canThrow`** as the prefix of the function signature. Functions that *technically* can throw, but should **never throw under function signature documentation semantics** do *not* use this prefix. For example, `OptionalType.unwrap` is prefixed with `canThrow`, because it will throw if it actually contained nothing, but a function taking `int or float` could technically throw if a `String` is passed (which is possible without a parser error since union types have to be passed as `Variant`), but it wouldn't be marked as `canThrow` because it would never throw if the function signature documentation is properly respected.
+
+```gd
+Enum MaybeNonZeroErr { UNKNOWN, DIV_ZERO }
+const MAYBE_NON_ZERO_ERR_REFLECTION: Array[String] = ["Unknown", "Divide by zero"]
+## (T, T) -> ResultType<T, E>
+## where T: int or float
+## where E: MaybeNonZeroErr
+func safe_divide(lhs: Variant, rhs: Variant) -> ResultType:
+    if rhs == 0.0:
+        return ResultType.new(false, MaybeNonZeroErr.DIV_ZERO)
+    return ResultType.new(true, lhs / rhs)
+
+print(str(safe_divide(4, 2).unwrap())) # "2"
+print(MAYBE_NON_ZERO_ERR_REFLECTION[safe_divide(3.14, 0.0).unwrap_err()]) # "Divide by 0"
+
+## (T) -> OptionalType<T>
+## where T: int or float
+func maybe_non_zero(v: Variant) -> OptionalType:
+    if v == 0:
+        return OptionalType.new(null)
+    else:
+        return OptionalType.new(v)
+
+print(str(maybe_non_zero(32).unwrap())) # "32"
+print(str(maybe_non_zero(0.0).is_some())) # false
+
+# Bad example for production, but provided for demonstration purposes
+## canThrow (int or float) -> void
+func throw_if_negative(v: Variant) -> void:
+    if v < 0:
+        push_error("Argument was negative!")
+        assert(false, "Argument was negative!")
+
+throw_if_negative(3.14) # No-op
+throw_if_negative(-12) # CRASH: "Argument was negative!"
+```
+
 # More Examples
 
 ```gd
@@ -364,3 +430,9 @@ func fn_5(in: Variant) -> Variant:
     else:
         return OptionalType.new(_held)
 ```
+
+# Inspiration
+
+The syntax is largely inspired from **Rust**, but tuned heavily to fit GDScript's strengths and needs.
+
+Rust is a statically typed, multi-paradigm, systems programming language, while GDScript is a dynamically typed, fully object-oriented, domain-specific scripting language. Not everything from Rust translates over to GDScript one-to-one and vice versa, so adjustments and compromises had to be made.

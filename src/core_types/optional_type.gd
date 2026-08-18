@@ -1,10 +1,12 @@
+## A class used to represent nullable values in a type-safer and scaleable way.
+
 class_name OptionalType
 extends Resource
 
 var _held: Variant
 var _exists: bool
 
-## (T) -> OptionalType<T>
+## (T?) -> OptionalType<T>
 func _init(content: Variant) -> void:
     _held = content
     _exists = content != null
@@ -31,7 +33,7 @@ func is_none_or(callable: Callable) -> bool:
     else:
         return true
 
-## (String) -> T
+## canThrow (String) -> T
 func expect(msg: String) -> Variant:
     if _exists:
         return _held
@@ -40,7 +42,7 @@ func expect(msg: String) -> Variant:
         assert(false, msg)
         return _held
 
-## () -> T
+## canThrow () -> T
 func unwrap() -> Variant:
     if _exists:
         return _held
