@@ -46,6 +46,13 @@ Therefore, **mutability will not be marked in function signatures**, but any fun
 
 You absolutely could if you want true type safety, but these languages have a steeper learning curve than GDScript, is less tightly integrated with Godot, and is less dynamic.
 
+#### Note: Classes vs Types
+
+Because GDScript is a fully object-oriented language, they are functionally identical. However, they carry different semantic weight depending on context.
+
+- As a **class**, we focus on its definition: properties, methods and inheritance.
+- As a **type**, we focus on its usage: annotations, runtime checks, and how values are passed around.
+
 ## Generic Types
 
 #### Unbound Generics
@@ -106,7 +113,7 @@ do_quack(Duck.new()) # "duck's id: asdf\nQuack!"
 
 ## Union Types
 
-Union types are denoted as `Type1 or Type2 or ...` where each `Type` is a concrete type or a bound generic type.
+Union types are denoted as `Type1 or Type2 or ...` where each `Type` is a concrete type or a generic type.
 
 Since Godot does not support union types, they are actually passed as `Variant`, but we specify them in documentation for clarity.
 
@@ -170,7 +177,7 @@ where Generic3: extends SomeClass ...
 They are simply passed as `Callable` but we specify them in documentation for clarity.
 
 ```gd
-## (Func(int) -> int) -> int
+## (Func(int) -> int, int) -> int
 func execute_with(f: Callable, value: int) -> int:
     return f.call(value)
 
