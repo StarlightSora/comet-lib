@@ -187,18 +187,20 @@ var lambda := func(i: int) -> int:
 print(str(execute_with(lambda, 1))) # "43"
 ```
 
-## Type Aliases
+## Aliases
 
 Complex type definitions can get long. This is when type aliases are convenient.
 
-We use the `_ALIAS_` keyword, then the alias name, then the actual definition to do this: `_ALIAS_ AliasName: SomeGeneric or SomethingElse ... where SomeType: impl some_method ...`
+We use the `TYPEALIAS` keyword, then the alias name, then the actual type definition to do this: `TYPEALIAS AliasName: SomeGeneric or SomethingElse ... where SomeType: impl some_method ...`
 
-Whenever you need to look up a definition of an alias, you can use `CTRL + SHIFT + F` (find all within project) and look for `_ALIAS_ YourAliasName`, and you should be able to locate it.
+Bounds can be aliased as well. We use the `BINDALIAS` keyword, then the alias name, then the actual binding definition to do this: `BINDALIAS BindingName: impl some_method and has some_value(SomeType) and extends SomeClass and ...`
+
+Whenever you need to look up a definition of an alias, you can use `CTRL + SHIFT + F` (find all within project) and look for `TYPEALIAS YourAliasName` or `BINDALIAS YourBindingName`, and you should be able to locate it.
 
 ```gd
-## _ALIAS_ NumberType: int or float
-## _ALIAS_ MyDuck: T
-## where T: impl quack and has id
+## BINDALIAS QuackBinding: impl quack and has id
+## TYPEALIAS NumberType: int or float
+## TYPEALIAS MyDuck: T where T: QuackBinding or has Bird
 
 ## (NumberType, NumberType) -> bool
 fn comp(lhs: Variant, rhs: Variant) -> bool:
@@ -217,6 +219,8 @@ fn try_quack(probably_duck: Variant) -> void:
             print(id + " goes...")
             probably_duck.quack()
             return
+    if probably_duck is Bird:
+        probably_duck.say() # Assuming Bird class has a method called say
     push_error("Cast failed!")
     assert(false, "Cast failed!")
 
@@ -226,7 +230,7 @@ var id = "asdf"
 func quack() -> void:
     print("Quack!")
 
-do_quack(Duck.new()) # "asdf goes...\nQuack!"
+try_quack(Duck.new()) # "asdf goes...\nQuack!"
 ```
 
 # More Examples
