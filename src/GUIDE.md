@@ -1,4 +1,4 @@
-# Function Signatures
+# CometLib Function Signature Documentation Syntax
 
 ## General Syntax
 
@@ -20,9 +20,10 @@ Why document function signatures if you can statically type them right in the fu
 In particular:
 
 - **No type safety for generic types.** Example: A function that takes a generic type `T` and returns a generic type `T` has to be written as `func(in: Variant) -> Variant`, erasing the compile-time type information of `T`, and losing the guarantee that the function parameter and return value is the same type.
-- **No type safety for union types.** Example: A function that either takes a `float` or `int` and returns `float` has to be written as `func(in: Variant) -> float`, erasing the type information of `float || int`.
+- **No type safety for union types.** Example: A function that either takes a `float` or `int` and returns `float` has to be written as `func(in: Variant) -> float`, erasing the type information of `float or int`.
 - **No type safety for nested type definitions.** Example: `Array[Dictionary[String, Variant]]` is invalid syntax, and has to be written as `Array[Dictionary]` instead, erasing the compile-time type information of the `Dictionary`'s keys and values.
 - **No type safety for callables.** Example: A function that takes a callable {which takes `void` and returns `float`}, and returns `float`, has to be written as `func(f: Callable) -> float`, erasing the compile-time function signature information of `Callable`, and raising ambiguity about what the `Callable` should take and return.
+- **No explicit information about async/yielding functions.** Example: A function could use `await` in the body, but for the caller, it is hard to tell if it does or not.
 
 #### What About Owned Values vs References?
 
@@ -36,7 +37,7 @@ Therefore, **references will not be marked in function signatures** due to it be
 
 #### What About Mutability vs Immutability?
 
-**TL;DR: It won't be specified in the function signature, but will typically be documented seperately.**
+**TL;DR: It won't be specified in the function signature documentation, but will typically be documented seperately.**
 
 Due to the above reason, it's hard to rigidly keep track of what's really mutable, immutable, will mutate or will not mutate. Even if a function doesn't mutate a parameter, or a method doesn't mutate the state of the associated instance, multiple variables may hold a reference to them, so mutation could happen anywhere for things that get passed by reference.
 
@@ -133,6 +134,30 @@ print(str(fn_1(12.34))) # "12.34"
 print(str(fn_1(5678))) # "5678"
 ```
 
+If you need to enforce type identicality (i.e. a function accepts two int or floats, but both arguments must have the same type), use generic typing, specifically with the "where-union pattern":
+
+```gd
+## (T, T) -> T
+## where T: int or float
+fn add_(lhs: Variant, rhs: Variant) -> Variant:
+    return lhs + rhs
+
+print(str(add_(11, 22))) # 33
+print(str(add_(1.1, 2.2))) # 3.3
+```
+
+If you need to implement bounds as well, use a comma after declaring the union type in the `where` clause, then declare the bounds:
+```gd
+# Assume that `Add` is implementation of being able to use the + operator
+## (T, T) -> T
+## where T: int or float, impl Add
+fn add_(lhs: Variant, rhs: Variant) -> Variant:
+    return lhs + rhs
+
+print(str(add_(11, 22))) # 33
+print(str(add_(1.1, 2.2))) # 3.3
+```
+
 ## Types Holding Types / Nested Types
 
 These are denoted as such: `OuterType<InnerType1, InnerType2, ...>`
@@ -195,14 +220,56 @@ We use the `TYPEALIAS` keyword, then the alias name, then the actual type defini
 
 Bounds can be aliased as well. We use the `BINDALIAS` keyword, then the alias name, then the actual binding definition to do this: `BINDALIAS BindingName: impl some_method and has some_value(SomeType) and extends SomeClass and ...`, then we use `BindingName` elsewhere whenever we need to mention the alias.
 
-Whenever you need to look up a definition of an alias, you can use `CTRL + SHIFT + F` (find all within project) and look for `TYPEALIAS YourAliasName:` or `BINDALIAS YourBindingName:`, and you should be able to locate it immediately.
+- A `TYPEALIAS` can mention other `TYPEALIAS` and `BINDALIAS`-defined aliases.
+- A `BINDALIAS` can mention other `BINDALIAS`-defined aliases.
+
+Whenever you need to look up a definition of an alias, you can use `CTRL + SHIFT + F` (find all within project) and look for `TYPEALIAS YourAliasName:` or `BINDALIAS YourBindingName:`, and you should be able to locate it.
+
+For `TYPEALIAS`es containing union types, type identicality is not enforced by default when mentioned elsewhere:
+
+```
+## TYPEALIAS SomeUnion: Type1 or Type2
+
+## (SomeUnion, SomeUnion) -> bool
+func some_func(a: Variant, b: Variant) -> bool
+    return ...
+
+# Note: Could also be written as:
+# (Type1 or Type2, Type1 or Type2) -> bool
+
+# or as:
+# (T, U) -> bool where T: SomeUnion where U: SomeUnion
+
+some_func(of_type_1, of_type_1) # This is OK
+some_func(of_type_1, of_type_2) # This is also OK
+```
+
+To enforce type identicality, use the "where-union pattern":
+
+```gd
+## TYPEALIAS SomeUnion: Type1 or Type2
+
+## (T, T) -> bool
+## where T: SomeUnion
+func some_func(a: Variant, b: Variant) -> bool
+    return ...
+
+some_func(of_type_1, of_type_1) # This is OK
+some_func(of_type_1, of_type_2) # This is *NOT* OK
+```
+
+A drawback of aliases is that they add another layer of indirection that the IDE cannot automatically resolve. Best practice is to use aliases only for very complex types, or union types used often. The below example likely does not require aliases, but is used here for demonstration.
 
 ```gd
 ## BINDALIAS QuackBinding: impl quack and has id
 ## TYPEALIAS NumberType: int or float
-## TYPEALIAS MyDuck: T where T: QuackBinding or extends Bird
+## TYPEALIAS MyDuck: T
+## where T: QuackBinding or extends Bird
 
-## (NumberType, NumberType) -> bool
+# We use the "where-union pattern" to enforce that lhs and rhs to be the same type.
+# If we simply declared it as (NumberType, NumberType) -> bool, then type identicality is not enforced.
+## (T, T) -> bool
+## where T: NumberType
 fn comp(lhs: Variant, rhs: Variant) -> bool:
     if lhs > rhs:
         return true
@@ -231,6 +298,34 @@ func quack() -> void:
     print("Quack!")
 
 try_quack(Duck.new()) # "asdf goes...\nQuack!"
+```
+
+The function signatures of the above example could be written as such, without aliases:
+
+```gd
+## (T, T) -> bool
+## where T: int or float
+fn comp(lhs: Variant, rhs: Variant) -> bool
+
+## (T) -> void
+## where T: [impl quack and has id] or extends Bird
+fn try_quack(probably_duck: Variant) -> void
+```
+
+## Async / Yielding Functions
+
+If a function uses `await` in its body, the function signature must be prepended with `async`: `async (Type1, Type2, ...) -> ReturnType`
+
+```gd
+## async (float) -> String
+func sleep_and_print(how_long: float) -> String:
+    print("Going to sleep!")
+    await get_tree().create_timer(how_long).timeout
+    print("I woke up!")
+    return "End"
+
+print("Start")
+print(await sleep_and_print(2.0))
 ```
 
 # More Examples
