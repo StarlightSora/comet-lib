@@ -249,3 +249,7 @@ func flatten() -> OptionalType:
             return self
     else:
         return self
+
+## () -> T?
+func to_raw_nullable() -> Variant:
+    return _held

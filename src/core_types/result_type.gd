@@ -208,3 +208,7 @@ func flatten() -> ResultType:
             return self
     else:
         return self
+
+## () -> T? or E?
+func to_raw_nullable_union() -> Variant:
+    return _held

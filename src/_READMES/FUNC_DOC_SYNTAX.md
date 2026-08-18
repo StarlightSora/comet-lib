@@ -29,6 +29,8 @@ The ultimate goal of the syntax is to improve type safety for developers without
 
 CometLib's documentation follows this syntax. You are encouraged to follow this for your own projects as well.
 
+## Compared to Rust
+
 #### What About Owned Values, References and Moves?
 
 **TL;DR: Worry about it the same way as you would do in contemporary GDScript. And don't worry about moves.**
@@ -353,6 +355,8 @@ var maybe_int: OptionalType = OptionalType.new(42) ## OptionalType<int>
 # Godot-native representation
 var maybe_int: int = 42 ## int?
 ```
+
+To convert `SomeType?` to `OptionalType<SomeType>`, construct an `OptionalType` as such: `OptionalType.new(value_of_some_type)`
 
 ## Error Handling
 
