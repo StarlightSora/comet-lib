@@ -3,8 +3,8 @@
 class_name OptionalType
 extends Resource
 
-var _held: Variant
-var _exists: bool
+@export var _held: Variant
+@export var _exists: bool
 
 ## (T?) -> OptionalType<T>
 func _init(content: Variant) -> void:

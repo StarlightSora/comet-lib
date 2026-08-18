@@ -3,8 +3,8 @@
 class_name ResultType
 extends Resource
 
-var _held: Variant
-var _ok: bool
+@export var _held: Variant
+@export var _ok: bool
 
 ## (bool, T? or E?) -> ResultType<T, E>
 func _init(is_okay: bool, content: Variant) -> void:
