@@ -356,11 +356,11 @@ var maybe_int: int = 42 ## int?
 
 ## Error Handling
 
-The library prefers to use `ResultType<T, E>` to represent success/fail states, instead of using nullables, union types or throwing if possible. `T` is the type of the success value, which is some appropriate type in the given context, and `E` is the type the failure value, which is typically a `String` or `Enum`. Refer to `core_types/result_type.gd` for more information. If `E` is an `Enum`, a `const Array[String]` is usually present in the same class as well for reflection of the `Enum` value.
+The library prefers to use `ResultType<T, E>` to represent success/fail states, instead of using nullables, union types or throwing if possible. `T` is the type of the success value, which is some appropriate type in the given context, and `E` is the type the failure value, which is typically a `String` or `Enum`. Refer to `core_types/result_type.gd` for more information on how to handle `ResultType`. If `E` is `Enum`, a `const Array<String>` is usually present in the same class as well for reflection of the `Enum` value.
 
-For cases that do not need to represent specific error reasons, `OptionalType<T>` is used instead. Refer to `core_types/optional_type.gd` for more information.
+For cases that do not need to represent specific error reasons, `OptionalType<T>` is used instead. Refer to `core_types/optional_type.gd` for more information on how to handle `OptionalType`.
 
-If a function does *need* to throw, it does so by using `push_error(reason)` then `assert(false, reason)`. Throwing is only done for unrecoverable error states. Note that `assert` is a no-op in release builds, and **may result in the function returning a different type than the function signature promised** instead of crashing the thread!
+If a function does *need* to throw, it does so by calling `push_error(reason)` then `assert(false, reason)`. Throwing is only done for unrecoverable error states. Note that `assert` is a no-op in release builds, and **may result in the function returning a different type than the function signature promised** instead of crashing the thread!
 
 **Functions that can throw are prefixed with `canThrow`** as the prefix of the function signature. Functions that *technically* can throw, but should **never throw under function signature documentation semantics** do *not* use this prefix. For example, `OptionalType.unwrap` is prefixed with `canThrow`, because it will throw if it actually contained nothing, but a function taking `int or float` could technically throw if a `String` is passed (which is possible without a parser error since union types have to be passed as `Variant`), but it wouldn't be marked as `canThrow` because it would never throw if the function signature documentation is properly respected.
 
