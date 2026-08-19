@@ -13,7 +13,7 @@ func dtr(degrees: float) -> float:
 	return deg_to_rad(degrees)
 
 ## (float) -> float
-func r2d(radians: float) -> float:
+func rtd(radians: float) -> float:
 	return rad_to_deg(radians)
 
 ## (float) -> OptionalType<float>
