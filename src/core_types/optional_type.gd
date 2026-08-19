@@ -152,13 +152,13 @@ func xor(optb: OptionalType) -> OptionalType:
     else:
         return OptionalType.new(null)
 
-## (T) -> T
+## mut (T) -> T
 func insert(value: Variant) -> Variant:
     _exists = true
     _held = value
     return _held
 
-## (T) -> T
+## mut (T) -> T
 func get_or_insert(value: Variant) -> Variant:
     if _exists:
         return _held
@@ -167,7 +167,7 @@ func get_or_insert(value: Variant) -> Variant:
         _held = value
         return _held
 
-## (Func() -> T) -> T
+## mut (Func() -> T) -> T
 func get_or_insert_with(f: Callable) -> Variant:
     if _exists:
         return _held
@@ -176,7 +176,7 @@ func get_or_insert_with(f: Callable) -> Variant:
         _held = f.call()
         return _held
 
-## () -> OptionalType<T>
+## mut () -> OptionalType<T>
 func take() -> OptionalType:
     if _exists:
         var temp = self.duplicate()
@@ -186,7 +186,7 @@ func take() -> OptionalType:
     else:
         return self
 
-## (Func(T) -> bool) -> OptionalType<T>
+## mut (Func(T) -> bool) -> OptionalType<T>
 func take_if(predicate: Callable) -> OptionalType:
     if _exists:
         if predicate.call(_held):
@@ -199,7 +199,7 @@ func take_if(predicate: Callable) -> OptionalType:
     else:
         return self
 
-## (T) -> OptionalType<T>
+## mut (T) -> OptionalType<T>
 func replace(value: Variant) -> OptionalType:
     var temp = self.duplicate()
     _exists = true

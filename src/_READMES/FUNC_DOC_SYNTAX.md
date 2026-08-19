@@ -3,11 +3,11 @@
 ## General Syntax
 
 ```
-(Type1, Type2, ...) -> ResultType
+prefixes (Type1, Type2, ...) -> ResultType
 ```
 
 ```
-(Generic1, Generic2, ...) -> ResultType
+prefixes (Generic1, Generic2, ...) -> ResultType
 where Generic1: [impl some_method and has some_property(SomeType)] or extends SomeClass ...,
 where Generic2: impl some_method1 and impl some_method2 and ...,
 ...
@@ -45,13 +45,47 @@ Therefore, **references** (`&`) **will not be marked in function signatures** du
 
 Functions that explicitly return a deep-copied reference to a complex type (so that mutating it won't affect other existing references) will generally have the `_as_dup` suffix on its function name, or have it documented separately. **Most functions returning complex types return something containing existing references**, even if it is wrapped in a new type, so mutating the returned reference may cause unexpected behavior upstream. Use `Object.duplicate_deep` if you need a new reference of an existing complex type.
 
-#### What About Mutability vs Immutability?
+#### What About Mutability?
 
-**TL;DR: It won't be specified in the function signature documentation, but will typically be documented seperately.**
+**TL;DR: It is only documented in function parameters and as a prefix to the function itself with the `mut` annotation, but omitted in return values and local variables.**
 
-Due to the above reason, it's hard to rigidly keep track of what's really mutable, immutable, will mutate or will not mutate. Even if a function doesn't mutate a parameter, or a method doesn't mutate the state of the associated instance, multiple variables may hold a reference to them, so mutation could happen anywhere for things that get passed by reference.
+Almost every complex type is mutable (can be modified) in GDScript, and in a language like GDScript, mutation (the act of modifying) is very common. Therefore, it is typically redundant to annotate something as mutable (or immutable) in the context of return values and local variables.
 
-Therefore, **mutability will not be marked in function signatures**, but any functions that mutate something will be **documented** as such **seperately**.
+However, it is still very helpful to annotate if a certain function would mutate its parameter(s), or `self` (the class instance itself). Therefore, **we use the `mut` keyword to denote mutability in function parameters and function prefixes**, as such:
+
+- Functions mutating `self`: `mut (Type1, Type2, ...) -> ReturnType`
+- Functions mutating parameters: `(mut Type1, mut Type2, ...) -> ReturnType`
+- Functions mutating both `self` and parameters: `mut (mut Type1, mut Type2, ...) -> ReturnType`
+
+Note that `mut` means it *could* mutate or *is allowed to* mutate, not that it *must* or *always* mutate.
+
+`mut` is never used for annotating primitive types that do an implicit copy when assigned to a new variable, in the context of annotating function parameters.
+
+In the context of function prefixes and parameters, the ones not annotated as `mut` do not mutate the associated instance of the given type.
+
+In contexts outside of this, we do not annotate with `mut` explicitly, and we default to the assumption that it is always `mut` unless documented otherwise.
+
+```gd
+class_name MyClass
+extends Resource
+
+var my_state: int = 0
+
+## () -> int
+func query() -> int:
+    return my_state
+
+## mut (int) -> int
+func increment(by: int) -> int:
+    my_state += by # `self` mutation happens here
+    return my_state
+
+## (mut MyClass) -> int
+func write_into(other: MyClass) -> int:
+    var temp := other.my_state
+    other.my_state = my_state # parameter mutation happens here
+    return temp
+```
 
 #### Representation of Self
 
@@ -213,7 +247,30 @@ where Generic3: extends SomeClass ...
 ...
 ```
 
-They are simply passed as `Callable` but we specify them in documentation for clarity.
+More generally, they are annotated the same way as a regular function would be, but with `Func` right before the opening paranthesis.
+
+In particular, if prefixes and mutability needs to be annotated, we do it the same way as if we are annotating a regular function. For example, if a callable could throw, and can mutate a parameter:
+
+`canThrow Func(mut Type1, Type2, Type3, ...) -> ReturnType` (More information about `canThrow` in the "Error Handling" section)
+
+**IMPORTANT: The only exception is that if a callable can mutate something within the scope of where the callable was declared at, we do _not_ prefix the callable with `mut`.** This is because as the callee (AKA, as the one that declared the function), it is usually none of our business if something that is outside of the function and class' scope gets mutated or not, since we have no way of directly accessing exterior scope anyways.
+
+```gd
+# Callee script
+# This `mut` prefix is redundant, because it's none of our business if `a` gets mutated or not, as it isn't in our scope
+## (mut Func() -> void) -> void
+func test(f: Callable) -> void
+    f.call()
+
+# Caller script
+var a := SomeClass.new()
+var lmb := func() -> void:
+    a.mutate_self_somehow()
+
+test(lmb)
+```
+
+Callables are simply passed as `Callable` but we specify the incoming and outgoing types in documentation for clarity.
 
 ```gd
 ## (Func(int) -> int, int) -> int

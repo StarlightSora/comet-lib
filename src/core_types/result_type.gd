@@ -51,7 +51,7 @@ func ok_as_dupe(deep_subresources_mode: DeepDuplicateMode = DeepDuplicateMode.DE
     else:
         return OptionalType.new(null)
 
-## () -> new OptionalType<E>
+## () -> OptionalType<E>
 func err() -> OptionalType:
     if _ok:
         return OptionalType.new(null)
