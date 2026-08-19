@@ -527,7 +527,7 @@ extends AbstractKVPair
 @export var _value: Variant
 
 # Note: We have `key` and `value` as `null` by default in the actual function declaration;
-# this is due to a GDScript quirk types with `@export`.
+# this is due to a GDScript quirk with types that have `@export` properties.
 # For our function signature documentation we don't mark them as nullable.
 ## (T, U) -> KVPair<T, U>
 func _init(key: Variant = null, value: Variant = null) -> void:

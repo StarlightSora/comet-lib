@@ -8,7 +8,7 @@ func _init() -> void:
 ## (Dictionary<T, U>, type A?) -> Array<A<T, U>>
 ## where A: default KVPair, extends AbstractKVPair
 ##
-## Note: You would likely want to explicitly downcast the returned reference as `Array<A>` in your call site.
+## Note: You would likely want to explicitly downcast the returned reference as "`Array[A]`" in your call site.
 func dict_to_arr(dict: Dictionary[Variant, Variant], make_as: Object = KVPair) -> Array[AbstractKVPair]:
     var arr: Array[AbstractKVPair] = []
     arr.resize(dict.size())
