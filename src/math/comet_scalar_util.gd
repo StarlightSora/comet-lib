@@ -8,6 +8,14 @@ const _ERF_A4 = -1.453152027
 const _ERF_A5 = 1.061405429
 const _ERF_P = 0.3275911
 
+## (float) -> float
+func dtr(degrees: float) -> float:
+	return deg_to_rad(degrees)
+
+## (float) -> float
+func r2d(radians: float) -> float:
+	return rad_to_deg(radians)
+
 ## (float) -> OptionalType<float>
 ##
 ## TIP: Use `.unwrap_or(default_value)` in the call site to convert this back to a non-nullable `float`,
@@ -24,7 +32,7 @@ func maybe_nan_or_inf_to_optional(to_check: float) -> OptionalType:
 
 ## (float, float) -> OptionalType<float>
 ##
-## Return value will be `is_none()` if `rhs == 0.0` or `NAN` was produced during calculation.
+## Return value will be `is_none()` if `rhs == 0.0`, or if `NAN` was produced during calculation.
 func safe_div(lhs: float, rhs: float) -> OptionalType:
 	if rhs == 0.0:
 		return OptionalType.new(null)
@@ -44,6 +52,12 @@ func logbase(product: float, base: float) -> float:
 func safe_logbase(product: float, base: float) -> OptionalType:
 	if product < 0.0 or base < 0.0: return OptionalType.new(null)
 	return maybe_nan_to_optional(log(product) / log(base))
+
+## (float, float) -> OptionalType<float>
+##
+## Return value will be `is_none()` if `NAN` was produced during calculation.
+func safe_pow(base: float, exp_: float) -> OptionalType:
+	return maybe_nan_to_optional(pow(base, exp_))
 
 var _fn_sum := func(ac: float, v: float) -> float: return ac + v
 ## (Array<float>) -> float
