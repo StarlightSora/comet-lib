@@ -5,3 +5,5 @@ Main README under construction. Please refer to `src/_READMES/FUNC_DOC_SYNTAX.md
 Library not unit/integration tested yet, and is largely incomplete.
 
 To use the library in its current state, clone the repositry in your project directory and add this repo as a submodule of your project.
+
+Currently under nightly development. The `master` branch is unstable.

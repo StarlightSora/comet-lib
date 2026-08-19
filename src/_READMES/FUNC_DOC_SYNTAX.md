@@ -31,7 +31,7 @@ CometLib's documentation follows this syntax. You are encouraged to follow this 
 
 ## Compared to Rust
 
-#### What About Owned Values, References and Moves?
+### What About Owned Values, References and Moves?
 
 **TL;DR: Worry about it the same way as you would do in contemporary GDScript. And don't worry about moves.**
 
@@ -45,7 +45,7 @@ Therefore, **references** (`&`) **will not be marked in function signatures** du
 
 Functions that explicitly return a deep-copied reference to a complex type (so that mutating it won't affect other existing references) will generally have the `_as_dup` suffix on its function name, or have it documented separately. **Most functions returning complex types return something containing existing references**, even if it is wrapped in a new type, so mutating the returned reference may cause unexpected behavior upstream. Use `Object.duplicate_deep` if you need a new reference of an existing complex type.
 
-#### What About Mutability?
+### What About Mutability?
 
 **TL;DR: It is only documented in function parameters and as a prefix to the function itself with the `mut` annotation, but omitted in return values and local variables.**
 
@@ -87,15 +87,15 @@ func write_into(other: MyClass) -> int:
     return temp
 ```
 
-#### Representation of Self
+### Representation of Self
 
 `self` **is not represented** in the function signature. It is completely redundant in a fully object-oriented language with poor support for mutability and ownership semantics.
 
-#### Why Not Just Use Rust, C# or C++ Instead?
+### Why Not Just Use Rust, C# or C++ Instead?
 
 You absolutely could if you want true type safety, but these languages have a steeper learning curve than GDScript, is less tightly integrated with Godot, and is less dynamic.
 
-#### Note: Classes vs Types
+### Note: Classes vs Types
 
 Because GDScript is a fully object-oriented language, they are functionally identical. However, they carry different semantic weight depending on context.
 
@@ -104,7 +104,7 @@ Because GDScript is a fully object-oriented language, they are functionally iden
 
 ## Generic Types
 
-#### Unbound Generics
+### Unbound Generics
 
 Generic types are typically denoted as `T`, `U`, `E`, `F` ... and do not exist as a concrete type in Godot. Whatever you pass becomes the concrete type in runtime.
 
@@ -119,7 +119,7 @@ print(str(fn_1(12.34))) # "12.34"
 print(str(fn_1("Hello CometLib!"))) # "Hello CometLib!"
 ```
 
-#### Bound Generics
+### Bound Generics
 
 Generic types can be bound to certain restrictions. This is needed when the function needs a certain method or property on a type, or the type must extend a certain class, to execute properly. Bound generics are denoted as such:
 
@@ -459,6 +459,85 @@ func throw_if_negative(v: Variant) -> void:
 
 throw_if_negative(3.14) # No-op
 throw_if_negative(-12) # CRASH: "Argument was negative!"
+```
+
+## Associated Types
+
+Especially when working with interfaces and builder classes, we sometimes need to know what type to refer to as a template. We accept an associated type to do this. **Associated types are prefixed with `type`**. In addition, associated types can be nullable, but a default type must be specified if that is the case, with `default` as a bound generic type. You can do this as such:
+
+`(type A?) -> AbstractTypeHolder<A> where A: default SomeConcreteType, extends AbstractType ...`
+
+With a captured associated type, we can make instances with it:
+
+```gd
+## (type T?) -> T
+## where T: default Resource, extends Object
+func instantiate_associated_type(assoc_type: Object = Resource) -> Variant:
+    return assoc_type.new()
+```
+
+Here, we ask for an associated type that extends `Object`. If it's not given, we assume it's `Resource`.
+
+Note that the default associated type must not be an abstract type, or else your function may crash!
+
+Associated types have to be captured as `Object` when writing the actual GDScript function declaration. Below is actual code from the CometLib library that uses associated types.
+
+```gd
+## (Dictionary<T, U>, type A?) -> Array<A<T, U>>
+## where A: default KVPair, extends AbstractKVPair
+func dict_to_arr(dict: Dictionary[Variant, Variant], make_as: Object = KVPair) -> Array[AbstractKVPair]:
+    var arr: Array[AbstractKVPair] = []
+    arr.resize(dict.size())
+    var i: int = 0
+    for key in dict:
+        arr[i] = make_as.new(key, dict[key])
+        i += 1
+    return arr
+
+## (Array<A<T, U>>) -> Dictionary<T, U>
+## where A: extends AbstractKVPair
+func arr_to_dict(arr: Array[AbstractKVPair]) -> Dictionary[Variant, Variant]:
+    var dict: Dictionary[Variant, Variant] = { }
+    for value in arr:
+        dict.set(value.k(), value.v())
+    return dict
+```
+
+### Interfaces With Associated Types
+
+If you need an interface that needs associated types, use duck typing, and document contracts in the interface, as such:
+
+```gd
+@abstract class_name AbstractKVPair
+extends Resource
+
+## Contracts:
+##
+## _init: (T, U) -> A<T, U>
+## where A: extends AbstractKVPair
+##
+## k: () -> T
+##
+# ...
+# -- # -- # -- # -- # -- # -- # -- #
+class_name KVPair
+extends AbstractKVPair
+
+@export var _key: Variant
+@export var _value: Variant
+
+# Note: We have `key` and `value` as `null` by default in the actual function declaration;
+# this is due to a GDScript quirk types with `@export`.
+# For our function signature documentation we don't mark them as nullable.
+## (T, U) -> KVPair<T, U>
+func _init(key: Variant = null, value: Variant = null) -> void:
+    _key = key
+    _value = value
+
+## () -> T
+func k() -> Variant:
+    return _key
+# ...
 ```
 
 # More Examples
