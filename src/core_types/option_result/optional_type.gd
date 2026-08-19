@@ -222,7 +222,7 @@ func transpose() -> ResultType:
         return ResultType.new(true, OptionalType.new(null))
 
 ## (DeepDuplicateMode) -> ResultType<OptionalType<T>, E>
-## where T: impl duplicate_deep or impl Copy
+## where T: CanDuplicate
 func transpose_as_dupe(deep_subresources_mode: DeepDuplicateMode = DeepDuplicateMode.DEEP_DUPLICATE_INTERNAL) -> ResultType:
     if _exists:
         if _held is ResultType:

@@ -41,7 +41,7 @@ func ok() -> OptionalType:
         return OptionalType.new(null)
 
 ## (DeepDuplicateMode) -> OptionalType<T>
-## where T: impl duplicate_deep or impl Copy
+## where T: CanDuplicate
 func ok_as_dupe(deep_subresources_mode: DeepDuplicateMode = DeepDuplicateMode.DEEP_DUPLICATE_INTERNAL) -> OptionalType:
     if _ok:
         if _held.has_method("duplicate_deep"):
@@ -59,7 +59,7 @@ func err() -> OptionalType:
         return OptionalType.new(_held)
 
 ## (DeepDuplicateMode) -> OptionalType<E>
-## where E: impl duplicate_deep or impl Copy
+## where E: CanDuplicate
 func err_as_dupe(deep_subresources_mode: DeepDuplicateMode = DeepDuplicateMode.DEEP_DUPLICATE_INTERNAL) -> OptionalType:
     if _ok:
         return OptionalType.new(null)
@@ -193,6 +193,7 @@ func transpose() -> OptionalType:
         return OptionalType.new(self)
 
 ## (DeepDuplicateMode) -> OptionalType<ResultType<T, E>>
+## where T: CanDuplicate where E: CanDuplicate
 func transpose_as_dupe(deep_subresources_mode: DeepDuplicateMode = DeepDuplicateMode.DEEP_DUPLICATE_INTERNAL) -> OptionalType:
     if _ok and _held == null:
         return OptionalType.new(null)
