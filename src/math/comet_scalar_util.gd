@@ -59,7 +59,7 @@ func safe_logbase(product: float, base: float) -> OptionalType:
 func safe_pow(base: float, exp_: float) -> OptionalType:
 	return maybe_nan_to_optional(pow(base, exp_))
 
-var _fn_sum := func(ac: float, v: float) -> float: return ac + v
+static var _fn_sum := func(ac: float, v: float) -> float: return ac + v
 ## (Array<float>) -> float
 func sum(arr: Array[float]) -> float:
 	return arr.reduce(_fn_sum)
