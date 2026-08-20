@@ -1,7 +1,7 @@
-class_name KVPairBuilder
-extends AbstractKVPairBuilder
+class_name KVPairUtil
+extends AbstractKVPairUtil
 
-## () -> KVPairBuilder
+## () -> KVPairUtil
 func _init() -> void:
     pass
 
