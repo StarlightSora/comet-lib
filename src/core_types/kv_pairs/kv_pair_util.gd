@@ -1,15 +1,12 @@
+## pureClass
 class_name KVPairUtil
 extends AbstractKVPairUtil
-
-## () -> KVPairUtil
-func _init() -> void:
-    pass
 
 ## (Dictionary<T, U>, type A?) -> Array<A<T, U>>
 ## where A: default KVPair, extends AbstractKVPair
 ##
 ## Note: You would likely want to explicitly downcast the returned reference as "`Array[A]`" at your call site.
-func dict_to_arr(dict: Dictionary[Variant, Variant], make_as: Object = KVPair) -> Array[AbstractKVPair]:
+static func dict_to_arr(dict: Dictionary[Variant, Variant], make_as: Object = KVPair) -> Array[AbstractKVPair]:
     var arr: Array[AbstractKVPair] = []
     arr.resize(dict.size())
     var i: int = 0
@@ -22,7 +19,7 @@ func dict_to_arr(dict: Dictionary[Variant, Variant], make_as: Object = KVPair) -
 ## where A: extends AbstractKVPair
 ##
 ## Note: You would likely want to explicitly downcast the returned reference as "`Dictionary[T, U]`" at your call site.
-func arr_to_dict(arr: Array[AbstractKVPair]) -> Dictionary[Variant, Variant]:
+static func arr_to_dict(arr: Array[AbstractKVPair]) -> Dictionary[Variant, Variant]:
     var dict: Dictionary[Variant, Variant] = { }
     for value in arr:
         dict.set(value.k(), value.v())

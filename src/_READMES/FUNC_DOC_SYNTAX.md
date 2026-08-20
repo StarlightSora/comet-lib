@@ -540,7 +540,91 @@ func k() -> Variant:
 # ...
 ```
 
-# More Examples
+## Static Functions / `static`
+
+**Static functions need to be annotated with `static` as a prefix** in the function signature, as such: `static (Type1, Type2, ...) -> ReturnType`
+
+**This rule does not apply for functions in `pureClass` classes** (defined below), as it would be redundant.
+
+Static functions can be called directly without the need of an instance of the class. In the function body, they have no access to `self`; meaning they cannot call non-`static` member functions (methods) nor access non-`static` properties. This does *not* mean that all `static func`s are non-`mut`, as they can still mutate `static var`s.
+
+Note: In a similar vein, `static var`s and `const`s can be accessed directly without the need of a class instance as well.
+
+```gd
+# Note: This class will not work as-is due to the parser errors below
+class_name MyClass
+extends Resource
+
+static var my_static_property: float = 42.0
+var my_property: float = 21.0
+
+## static () -> void
+static func static_example() -> void:
+    print(str(my_static_property)) # OK
+    print(str(my_property)) # PARSER ERROR
+
+## () -> void
+func nonstatic_example() -> void:
+    print(str(my_static_property)) # OK
+    print(str(my_property)) # OK
+
+## static mut () -> void
+static func static_mut_example() -> void:
+    my_static_property += 1.0 # OK
+    my_property += 1.0 # PARSER ERROR
+
+## mut () -> void
+func mut_example() -> void:
+    my_static_property += 1.0 # OK
+    my_property += 1.0 # OK
+```
+
+### Pure Classes
+
+**Some classes are considered "pure"**, which means that they hold **no mutable state**, and all its methods produce **fully deterministic outputs** regardless of when and where it was called, as long as all the given arguments had the exact same states and values.
+
+In other words, this means the class **only has `const`s, `enum`s, and `static func`s. `static var`s** with its names **prefixed with a `_`** *(GDScript convention to mark a class member as private)*, and has its **value preassigned** are also considered to obey this rule, **as long as it is never mutated** externally and internally.
+
+*Note: `static` on `var`s make it so that all instances of this class share the variable. `static` on `func`s make it so that the method belongs to the class itself, instead of instances of the class.*
+
+For example, this means `static var _rng: RandomNumberGenerator = RandomNumberGenerator.new()` is *not* considered to obey this rule, as it self-mutates every time it is called to return a new random number *(it is technically obedient if no methods access it, but then why have this property in the first place?)*. In fact, a function using this `_rng` would have to be marked as `mut`. In contrast, a method with the function signature `static (mut RandomNumberGenerator) -> float` *is* considered to obey this rule, because the output will always be the same as long as the incoming `RandomNumberGenerator` have the exact same state.
+
+With this information, we can assert that **all classes that do not have any non-`static funcs` are `pureClass`es, as long as none of the `static func`s are `mut`.**
+
+**Pure classes are documented with `pureClass` on the top level documentation of the class.** Example:
+
+```gd
+## pureClass
+class_name MyLib
+extends RefCounted
+
+enum NumberSign { NEGATIVE, ZERO, POSITIVE }
+const MEANING_OF_LIFE: int = 42
+# This callable essentially casts an `int` to an `enum`.
+# Not recommended to liberally do in prod as it may create invalid `enum` values,
+# but done here as an example.
+# Note: Callables cannot be `const` in GDScript, so we assign them as `static var` instead.
+static var _make_sign_enum: Callable = func(a: float) -> NumberSign: return (sign(a) + 1) as NumberSign
+
+## (int) -> int
+static func do_something(a: int) -> int:
+    return a + MEANING_OF_LIFE
+
+## (int) -> NumberSign
+static func sign_enum(a: float) -> NumberSign:
+    return _make_sign_enum.call(a)
+```
+
+**There is no need to instantiate a pure class.** You can call their methods, access any `static var` and `const`s directly:
+
+```gd
+print(str(MyLib.do_something(-21))) # "21"
+print(str(MyLib.sign_enum(42.0))) # "2" (Corresponds to `NumberSign.POSITIVE`, but `enum`s implicitly gets casted to `int`)
+print(str(MyLib.MEANING_OF_LIFE)) # "42"
+print(str(MyLib._make_sign_enum.call(-123.0))) # "0" (Bad practice as this is a private property, only done here as an example)
+```
+
+# More Examples (WIP)
 
 ```gd
 ## (float) -> float
