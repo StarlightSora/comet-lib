@@ -544,7 +544,7 @@ func k() -> Variant:
 
 **Static functions need to be annotated with `static` as a prefix** in the function signature, as such: `static (Type1, Type2, ...) -> ReturnType`
 
-**This rule does not apply for functions in `pureClass` classes** (defined below), as it would be redundant.
+**This rule does not apply for functions in `pureClass` classes** (discussed below), as it would be redundant.
 
 Static functions can be called directly without the need of an instance of the class. In the function body, they have no access to `self`; meaning they cannot call non-`static` member functions (methods) nor access non-`static` properties. This does *not* mean that all `static func`s are non-`mut`, as they can still mutate `static var`s.
 
@@ -585,11 +585,13 @@ func mut_example() -> void:
 
 In other words, this means the class **only has `const`s, `enum`s, and `static func`s. `static var`s** with its names **prefixed with a `_`** *(GDScript convention to mark a class member as private)*, and has its **value preassigned** are also considered to obey this rule, **as long as it is never mutated** externally and internally.
 
-*Note: `static` on `var`s make it so that all instances of this class share the variable. `static` on `func`s make it so that the method belongs to the class itself, instead of instances of the class.*
+*Note: `static` on `var`s make it so that the variable is shared across the class and all of its instances. `static` on `func`s make it so that the method belongs to the class itself, instead of instances of the class.*
+
+*While technically a class with non-`static` `func`/`var`s are still grounds for qualifying as a `pureClass` if the `func`s never mutate interior state and if the `var`s never get mutated, all `func`/`var`s must be `static` regardless so they can be accessed directly (mentioned below).*
 
 For example, this means `static var _rng: RandomNumberGenerator = RandomNumberGenerator.new()` is *not* considered to obey this rule, as it self-mutates every time it is called to return a new random number *(it is technically obedient if no methods access it, but then why have this property in the first place?)*. In fact, a function using this `_rng` would have to be marked as `mut`. In contrast, a method with the function signature `static (mut RandomNumberGenerator) -> float` *is* considered to obey this rule, because the output will always be the same as long as the incoming `RandomNumberGenerator` have the exact same state.
 
-With this information, we can assert that **all classes that do not have any non-`static funcs` are `pureClass`es, as long as none of the `static func`s are `mut`.**
+With this information, we can assert that **all classes that do not have any non-`static` `funcs` are `pureClass`es, as long as none of the `static func`s are `mut`.**
 
 **Pure classes are documented with `pureClass` on the top level documentation of the class.** Example:
 
