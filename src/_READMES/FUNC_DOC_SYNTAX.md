@@ -65,7 +65,7 @@ In the context of function prefixes and parameters, the ones not annotated as `m
 
 In contexts outside of this, we do not annotate with `mut` explicitly, and we default to the assumption that it is always `mut` unless documented otherwise.
 
-```gd
+```gdscript
 class_name MyClass
 extends Resource
 
@@ -110,7 +110,7 @@ Generic types are typically denoted as `T`, `U`, `E`, `F` ... and do not exist a
 
 Since Godot does not support generic types, they are actually passed as `Variant`, but we specify generic types in function signature documentations for clarity.
 
-```gd
+```gdscript
 ## (T) -> T
 func fn_1(t: Variant) -> Variant:
     return t
@@ -136,7 +136,7 @@ The expression is evaluatated from left to right, one by one, by default. Use sq
 
 `(T) -> T where T: [impl method_1 and has property_1(TypeOfProperty)] or extends Class1 or [extends Class2 or impl method_2] ...`
 
-```gd
+```gdscript
 ## (T) -> void
 ## where T: [impl quack and has id(String)] or extends Bird
 func do_quack(duck: Variant) -> void:
@@ -166,7 +166,7 @@ Union types are denoted as `Type1 or Type2 or ...` where each `Type` is a concre
 
 Since Godot does not support union types, they are actually passed as `Variant`, but we specify them in documentation for clarity.
 
-```gd
+```gdscript
 ## (int or float) -> int
 func fn_1(t: Variant) -> int:
     if t is float:
@@ -184,7 +184,7 @@ print(str(fn_1(5678))) # "5678"
 
 If you need to enforce type identicality (i.e. a function accepts two int or floats, but both arguments must have the same type), use generic typing, specifically with the **"where-union pattern"**:
 
-```gd
+```gdscript
 ## (T, T) -> T
 ## where T: int or float
 fn add_(lhs: Variant, rhs: Variant) -> Variant:
@@ -195,7 +195,7 @@ print(str(add_(1.1, 2.2))) # 3.3
 ```
 
 If you need to implement bounds as well, use a comma after declaring the union type in the `where` clause, then declare the bounds:
-```gd
+```gdscript
 # Assume that `Add` is implementation of being able to use the + operator
 ## (T, T) -> T
 ## where T: int or float, impl Add
@@ -212,7 +212,7 @@ These are denoted as such: `OuterType<InnerType1, InnerType2, ...>`
 
 Due to Godot's type system limitations, they are actually passed as `OuterType` but we specify them in documentation for clarity.
 
-```gd
+```gdscript
 ## (T, T, T) -> Array<T>
 func make_array(a: Variant, b: Variant, c: Variant) -> Array[Variant]:
     var arr: Array[Variant] = []
@@ -255,7 +255,7 @@ In particular, if prefixes and mutability needs to be annotated, we do it the sa
 
 **IMPORTANT: The only exception is that if a callable can mutate something within the scope of where the callable was declared at, we do _not_ prefix the callable with `mut`.** This is because as the callee (AKA, as the one that declared the function), it is usually none of our business if something that is outside of the function and class' scope gets mutated or not, since we have no way of directly accessing exterior scope anyways.
 
-```gd
+```gdscript
 # Callee script
 # This `mut` prefix is redundant, because it's none of our business if `a` gets mutated or not, as it isn't in our scope
 ## (mut Func() -> void) -> void
@@ -272,7 +272,7 @@ test(lmb)
 
 Callables are simply passed as `Callable` but we specify the incoming and outgoing types in documentation for clarity.
 
-```gd
+```gdscript
 ## (Func(int) -> int, int) -> int
 func execute_with(f: Callable, value: int) -> int:
     return f.call(value)
@@ -317,7 +317,7 @@ some_func(of_type_1, of_type_2) # This is also OK
 
 To enforce type identicality, use the "where-union pattern":
 
-```gd
+```gdscript
 ## TYPEALIAS SomeUnion: Type1 or Type2
 
 ## (T, T) -> bool
@@ -331,7 +331,7 @@ some_func(of_type_1, of_type_2) # This is *NOT* OK
 
 A drawback of aliases is that they add another layer of indirection that the IDE cannot automatically resolve. Best practice is to use aliases only for very complex types, or types that are used often. The below example likely does not require aliases, but is used here for demonstration.
 
-```gd
+```gdscript
 ## BINDALIAS QuackBinding: impl quack and has id
 ## TYPEALIAS NumberType: int or float
 ## TYPEALIAS MyDuck: T
@@ -373,7 +373,7 @@ try_quack(Duck.new()) # "asdf goes...\nQuack!"
 
 The function signatures of the above example could be written as such, without aliases:
 
-```gd
+```gdscript
 ## (T, T) -> bool
 ## where T: int or float
 fn comp(lhs: Variant, rhs: Variant) -> bool
@@ -387,7 +387,7 @@ fn try_quack(probably_duck: Variant) -> void
 
 If a function uses `await` in its body, the function signature must be prepended with `async`: `async (Type1, Type2, ...) -> ReturnType`
 
-```gd
+```gdscript
 ## async (float) -> String
 func sleep_and_print(how_long: float) -> String:
     print("Going to sleep!")
@@ -405,7 +405,7 @@ The library prefers to use `OptionalType<T>` to represent nullables instead, to 
 
 This is necessary when interfacing with some native Godot APIs, other libraries, or writing extremely performance-critical/memory-heavy code.
 
-```gd
+```gdscript
 # Preferred representation
 var maybe_int: OptionalType = OptionalType.new(42) ## OptionalType<int>
 
@@ -425,7 +425,7 @@ If a function does *need* to throw, it does so by calling `push_error(reason)` t
 
 **Functions that can throw are prefixed with `canThrow`** as the prefix of the function signature. Functions that *technically* can throw, but should **never throw under function signature documentation semantics** do *not* use this prefix. For example, `OptionalType.unwrap` is prefixed with `canThrow`, because it will throw if it actually contained nothing, but a function taking `int or float` could technically throw if a `String` is passed (which is possible without a parser error since union types have to be passed as `Variant`), but it wouldn't be marked as `canThrow` because it would never throw if the function signature documentation is properly respected.
 
-```gd
+```gdscript
 Enum MaybeNonZeroErr { UNKNOWN, DIV_ZERO }
 const MAYBE_NON_ZERO_ERR_REFLECTION: Array[String] = ["Unknown", "Divide by zero"]
 ## (T, T) -> ResultType<T, E>
@@ -469,7 +469,7 @@ Especially when working with interfaces and builder classes, we sometimes need t
 
 With a captured associated type, we can make instances with it:
 
-```gd
+```gdscript
 ## (type T?) -> T
 ## where T: default Resource, extends Object
 func instantiate_associated_type(assoc_type: Object = Resource) -> Variant:
@@ -482,7 +482,7 @@ Note that the default associated type must not be an abstract type, or else your
 
 Associated types have to be captured as `Object` when writing the actual GDScript function declaration. Below is actual code from the CometLib library that uses associated types.
 
-```gd
+```gdscript
 ## (Dictionary<T, U>, type A?) -> Array<A<T, U>>
 ## where A: default KVPair, extends AbstractKVPair
 func dict_to_arr(dict: Dictionary[Variant, Variant], make_as: Object = KVPair) -> Array[AbstractKVPair]:
@@ -507,7 +507,7 @@ func arr_to_dict(arr: Array[AbstractKVPair]) -> Dictionary[Variant, Variant]:
 
 If you need an interface that needs associated types, use duck typing, and document contracts in the interface, as such:
 
-```gd
+```gdscript
 @abstract class_name AbstractKVPair
 extends Resource
 
@@ -550,7 +550,7 @@ Static functions can be called directly without the need of an instance of the c
 
 Note: In a similar vein, `static var`s and `const`s can be accessed directly without the need of a class instance as well.
 
-```gd
+```gdscript
 # Note: This class will not work as-is due to the parser errors below
 class_name MyClass
 extends Resource
@@ -593,7 +593,7 @@ With this information, we can assert that **all classes that do not have any non
 
 **Pure classes are documented with `pureClass` on the top level documentation of the class.** Example:
 
-```gd
+```gdscript
 ## pureClass
 class_name MyLib
 extends RefCounted
@@ -617,7 +617,7 @@ static func sign_enum(a: float) -> NumberSign:
 
 **There is no need to instantiate a pure class.** You can call their methods, access any `static var` and `const`s directly:
 
-```gd
+```gdscript
 print(str(MyLib.do_something(-21))) # "21"
 print(str(MyLib.sign_enum(42.0))) # "2" (Corresponds to `NumberSign.POSITIVE`, but `enum`s implicitly gets casted to `int`)
 print(str(MyLib.MEANING_OF_LIFE)) # "42"
@@ -626,7 +626,7 @@ print(str(MyLib._make_sign_enum.call(-123.0))) # "0" (Bad practice as this is a 
 
 # More Examples (WIP)
 
-```gd
+```gdscript
 ## (float) -> float
 func fn_1(a: float) -> float:
     return a + 42.0
