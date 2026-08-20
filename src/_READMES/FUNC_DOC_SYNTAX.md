@@ -542,6 +542,8 @@ func k() -> Variant:
 
 ## Static Functions / `static`
 
+*This section explains about `static` in more detail as well because the official Godot documentation around `static` is very sparse.*
+
 **Static functions need to be annotated with `static` as a prefix** in the function signature, as such: `static (Type1, Type2, ...) -> ReturnType`
 
 **This rule does not apply for functions in `pureClass` classes** (discussed below), as it would be redundant.
