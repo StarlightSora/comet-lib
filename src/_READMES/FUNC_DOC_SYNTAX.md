@@ -206,6 +206,22 @@ print(str(add_(11, 22))) # 33
 print(str(add_(1.1, 2.2))) # 3.3
 ```
 
+## `not`
+
+The `not` keyword can be used to negate a binding. For example:
+
+```gdscript
+## (T) -> void
+## where T: not extends Node3D
+func test1(incoming: Variant) -> void:
+    pass
+
+## (T) -> void
+## where T: not OptionalType<U> and not bool
+func test2(incoming: Variant) -> void:
+    pass
+```
+
 ## Types Holding Types / Nested Types
 
 These are denoted as such: `OuterType<InnerType1, InnerType2, ...>`
@@ -591,9 +607,9 @@ In other words, this means the class **only has `const`s, `enum`s, and non-`mut`
 
 For example, this means `static var _rng: RandomNumberGenerator = RandomNumberGenerator.new()` is *not* considered to obey this rule, as it self-mutates every time it is called to return a new random number. In fact, a function using this `_rng` would have to be marked as `mut`. In contrast, a method with the function signature `static (mut RandomNumberGenerator) -> float` *is* considered to obey this rule, because the output will always be the same as long as the incoming `RandomNumberGenerator` have the exact same state.
 
-Note that **`static func`s can still access globals or other externally accessible state**, for example, the `Time` singleton and the scene tree. **If they do this in a way that causes nondeterministic behavior, then the function must be prefixed with `impure`**. This does not disqualify the entire class from being a `pureClass` however, and this annotation is only needed for `pureClass` functions. The reason for such functions not disqualifying the entire class is for pragmatic reasons.
+Note that **`static func`s can still access globals or other externally accessible state**, for example, the `Time` singleton and the scene tree. **If they access state that are nondeterministic immutably, then the function must be prefixed with `impure`**. This does not disqualify the entire class from being a `pureClass`, and this annotation is only needed for `pureClass` functions. The reason for such functions not disqualifying the entire class is for pragmatic reasons. If they **mutate** external state however, this disqualifies the entire function from being a `pureClass` as the function would be `mut`.
 
-For example, if they reference real-life time in the function body, then they need to be marked as `impure`. If they access the scene tree, this is fine as long as the resulting behavior is guaranteed to be deterministic (i.e. creating an ad-hoc `Timer`* for the sake of yielding code execution). <sub>*see Technicalities section</sub>
+For example, if a `static func` references real-life time in the function body, then it needs to be marked as `impure`. If it accesses the scene tree (**Note: This is a hypothetical, `static func`s cannot access the scene tree!**), this is fine as long as the resulting behavior is guaranteed to be deterministic (i.e. creating an ad-hoc `Timer`* for the sake of yielding code execution). <sub>*see Technicalities section</sub>
 
 **Pure classes are documented with `pureClass` on the top level documentation of the class.** Example:
 
@@ -637,7 +653,54 @@ print(str(MyLib.get_time_passed_since_start())) # Output is nondeterminsitic
 
 - A class with non-`static` `func`/`var`s are, by definition, still grounds for qualifying as a `pureClass` if the `func`s never mutate interior state and if the `var`s never get mutated. However, all `func`/`var`s must be `static` regardless so they can be accessed directly without the need of an instantiated class.
 - `Timer`s and other similar `async` behavior that seem to be deterministic are actually inherently nondeterministic as their actual wall-clock time passed differs slightly every time. The technical reasons behind this is beyond the scope of this document. Regardless, we treat them as deterministic, by assuming ideal conditions.
+- Writing on globally accessible state in a way that will not cause cascading side effects and will be fully reverted by the function is not considered to break the rule.
 - If a class has a `static var` that *can* mutate, but if no mutation actually happens in runtime, and if the instance always gets created deterministically, then this is still considered to obey the rule.
+
+## Recursive Generics / `Any` / `AnyFlat`
+
+**`Any` is a union type of every type, including all `Array<T>`s and `Dictionary<U, V>`s**. It is identical to an unbound generic type, but without any type identicality enforcement. In GDScript this is equivalent to raw `Variant`. Note that `Any` is very useful when combined with `not`.
+
+```gdscript
+## (Any) -> void
+func literally_anything(something: Variant) -> void:
+    print(str(something))
+```
+
+Below is an example of expressing a **recursive generic type**. We define a base dictionary as `R`, with `String` keys, and `R or T` values. `T` can be anything as long as it's not a `Dictionary` (that isn't `R`) or an `Array`.
+
+Note that `Any` is very useful in conjunction with `not`, as we usually do not care what types go inside a negated nested type.
+
+```gdscript
+## (R) -> void
+## where R: Dictionary<String, R or T>
+## where T: not Dictionary<Any, Any> and not Array<Any>
+func recursive_dict(rdict: Dictionary[String, Variant]) -> void:
+    for key in rdict:
+        var value: Variant = rdict[value]
+        if value is Dictionary:
+            recursive_dict(value)
+        else:
+            print(str(value))
+
+# The above signature could be written as, without Any:
+## (R) -> void
+## where R: Dictionary<String, R or T>
+## where T: not Dictionary<U, V> and not Array<W>
+```
+
+This can be simplified with **`AnyFlat`** while not compromising in safety. This is a **union type of everything except `Array<T>` and `Dictionary<U, V>`**:
+
+```gdscript
+## (R) -> void
+## where R: Dictionary<String, R or AnyFlat>
+func recursive_dict(rdict: Dictionary[String, Variant]) -> void:
+    for key in rdict:
+        var value: Variant = rdict[value]
+        if value is Dictionary:
+            recursive_dict(value)
+        else:
+            print(str(value))
+```
 
 # More Examples (WIP)
 
