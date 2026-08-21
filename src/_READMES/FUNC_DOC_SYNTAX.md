@@ -586,14 +586,14 @@ func mut_example() -> void:
 **Some classes are considered "pure"**, which means that they hold **no mutable state**, and all its methods produce **fully deterministic outputs** regardless of when and where it was called, as long as all the given arguments had the exact same states and values.
 
 In other words, this means the class **only has `const`s, `enum`s, and non-`mut` `static func`s. `static var`s** with its names **prefixed with a `_`** *(GDScript convention to mark a class member as private)*, and has its **value preassigned** are also considered to obey this rule, **as long as it is never mutated** externally and internally.
-
+ 
 *Note: `static` on `var`s make it so that the variable is shared across the class and all of its instances. `static` on `func`s make it so that the method belongs to the class itself, instead of instances of the class.*
 
-*While technically a class with non-`static` `func`/`var`s are still grounds for qualifying as a `pureClass` if the `func`s never mutate interior state and if the `var`s never get mutated, all `func`/`var`s must be `static` regardless so they can be accessed directly (mentioned below).*
+For example, this means `static var _rng: RandomNumberGenerator = RandomNumberGenerator.new()` is *not* considered to obey this rule, as it self-mutates every time it is called to return a new random number. In fact, a function using this `_rng` would have to be marked as `mut`. In contrast, a method with the function signature `static (mut RandomNumberGenerator) -> float` *is* considered to obey this rule, because the output will always be the same as long as the incoming `RandomNumberGenerator` have the exact same state.
 
-For example, this means `static var _rng: RandomNumberGenerator = RandomNumberGenerator.new()` is *not* considered to obey this rule, as it self-mutates every time it is called to return a new random number *(it is technically obedient if no methods access it, but then why have this property in the first place?)*. In fact, a function using this `_rng` would have to be marked as `mut`. In contrast, a method with the function signature `static (mut RandomNumberGenerator) -> float` *is* considered to obey this rule, because the output will always be the same as long as the incoming `RandomNumberGenerator` have the exact same state.
+Note that **`static func`s can still access globals or other externally accessible state**, for example, the `Time` singleton and the scene tree. **If they do this in a way that causes nondeterministic behavior, then the function must be prefixed with `impure`**. This does not disqualify the entire class from being a `pureClass` however, and this annotation is only needed for `pureClass` functions. The reason for such functions not disqualifying the entire class is for pragmatic reasons.
 
-With this information, we can assert that **all classes that do not have any non-`static` `funcs` are `pureClass`es, as long as none of the `static func`s are `mut`.**
+For example, if they reference real-life time in the function body, then they need to be marked as `impure`. If they access the scene tree, this is fine as long as the resulting behavior is guaranteed to be deterministic (i.e. creating an ad-hoc `Timer`* for the sake of yielding code execution). <sub>*see Technicalities section</sub>
 
 **Pure classes are documented with `pureClass` on the top level documentation of the class.** Example:
 
@@ -617,6 +617,10 @@ static func do_something(a: int) -> int:
 ## (int) -> NumberSign
 static func sign_enum(a: float) -> NumberSign:
     return _make_sign_enum.call(a)
+
+## impure () -> float
+static func get_time_passed_since_start() -> float:
+    return Time.get_ticks_usec() as float / 1000.0 / 1000.0
 ```
 
 **There is no need to instantiate a pure class.** You can call their methods, access any `static var`,s, `const`s, and `enum`s directly:
@@ -626,7 +630,14 @@ print(str(MyLib.do_something(-21))) # "21"
 print(str(MyLib.sign_enum(42.0))) # "2" (Corresponds to `NumberSign.POSITIVE`, but `enum`s implicitly gets casted to `int`)
 print(str(MyLib.MEANING_OF_LIFE)) # "42"
 print(str(MyLib._make_sign_enum.call(-123.0))) # "0" (Bad practice as this is a private property, only done here as an example)
+print(str(MyLib.get_time_passed_since_start())) # Output is nondeterminsitic
 ```
+
+#### Technicalities
+
+- A class with non-`static` `func`/`var`s are, by definition, still grounds for qualifying as a `pureClass` if the `func`s never mutate interior state and if the `var`s never get mutated. However, all `func`/`var`s must be `static` regardless so they can be accessed directly without the need of an instantiated class.
+- `Timer`s and other similar `async` behavior that seem to be deterministic are actually inherently nondeterministic as their actual wall-clock time passed differs slightly every time. The technical reasons behind this is beyond the scope of this document. Regardless, we treat them as deterministic, by assuming ideal conditions.
+- If a class has a `static var` that *can* mutate, but if no mutation actually happens in runtime, and if the instance always gets created deterministically, then this is still considered to obey the rule.
 
 # More Examples (WIP)
 
