@@ -1,3 +1,6 @@
+## Stores two values. The types can be different.
+##
+## This is the preferred way to return two values from a function, rather than using ad-hoc arrays or dictionaries.
 @abstract class_name AbstractKVPair
 extends Resource
 
@@ -12,5 +15,5 @@ extends Resource
 ##
 ## mut_k: mut (T) -> T
 ##
-## mut_v: mut (T) -> U
+## mut_v: mut (U) -> U
 ##

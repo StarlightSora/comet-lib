@@ -24,3 +24,17 @@ static func arr_to_dict(arr: Array[AbstractKVPair]) -> Dictionary[Variant, Varia
     for value in arr:
         dict.set(value.k(), value.v())
     return dict
+
+## (Array<T or U>, type A?) -> A<T, U>
+## where A: default KVPair, extends AbstractKVPair
+##
+## Note: The 0th element of `arr` is `T`, the 1st element is `U`. Any extra elements will be ignored.
+static func transpose_to_kv(arr: Array[Variant], make_as: Object = KVPair) -> AbstractKVPair:
+    return make_as.new(arr[0], arr[1])
+
+## transpose_from_kv(A<T, U>) -> Array<T or U>
+## where A: extends AbstractKVPair
+##
+## Note: The 0th element of the returning reference is `T`, the 1st element is `U`.
+static func transpose_from_kv(kv: AbstractKVPair) -> Array[Variant]:
+    return [kv.k(), kv.v()]

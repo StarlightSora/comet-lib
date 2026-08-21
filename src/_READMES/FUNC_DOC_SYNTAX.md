@@ -585,7 +585,7 @@ func mut_example() -> void:
 
 **Some classes are considered "pure"**, which means that they hold **no mutable state**, and all its methods produce **fully deterministic outputs** regardless of when and where it was called, as long as all the given arguments had the exact same states and values.
 
-In other words, this means the class **only has `const`s, `enum`s, and `static func`s. `static var`s** with its names **prefixed with a `_`** *(GDScript convention to mark a class member as private)*, and has its **value preassigned** are also considered to obey this rule, **as long as it is never mutated** externally and internally.
+In other words, this means the class **only has `const`s, `enum`s, and non-`mut` `static func`s. `static var`s** with its names **prefixed with a `_`** *(GDScript convention to mark a class member as private)*, and has its **value preassigned** are also considered to obey this rule, **as long as it is never mutated** externally and internally.
 
 *Note: `static` on `var`s make it so that the variable is shared across the class and all of its instances. `static` on `func`s make it so that the method belongs to the class itself, instead of instances of the class.*
 
@@ -619,7 +619,7 @@ static func sign_enum(a: float) -> NumberSign:
     return _make_sign_enum.call(a)
 ```
 
-**There is no need to instantiate a pure class.** You can call their methods, access any `static var` and `const`s directly:
+**There is no need to instantiate a pure class.** You can call their methods, access any `static var`,s, `const`s, and `enum`s directly:
 
 ```gdscript
 print(str(MyLib.do_something(-21))) # "21"
