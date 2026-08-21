@@ -13,13 +13,13 @@ static var _g: Dictionary[String, Variant]
 static func g(entry: String) -> OptionalType:
     return OptionalType.new(_g.get(entry))
 
-## static (String) -> void
+## static (String, Any) -> void
 ##
 ## Write to the global space registry.
 static func mut_g(entry: String, value: Variant) -> void:
     _g.set(entry, value)
 
-## static (String) -> OptionalType<Any>
+## static (String, Any) -> OptionalType<Any>
 ##
 ## Write to the global space registry. The old value will be returned in an OptionalType.
 static func mut_g_returning(entry: String, value: Variant) -> OptionalType:
