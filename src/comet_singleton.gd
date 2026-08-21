@@ -5,26 +5,26 @@
 extends Node
 
 ## Dictionary<String, Any>
-var _g: Dictionary[String, Variant]
+static var _g: Dictionary[String, Variant]
 
-## (String) -> OptionalType<Any>
+## static (String) -> OptionalType<Any>
 ##
 ## Read from the global space registry.
-func g(entry: String) -> OptionalType:
+static func g(entry: String) -> OptionalType:
     return OptionalType.new(_g.get(entry))
 
-## (String) -> OptionalType<Any>
+## static (String) -> OptionalType<Any>
 ##
 ## Write to the global space registry. The old value will be returned in an OptionalType.
-func mut_g(entry: String, value: Variant) -> OptionalType:
+static func mut_g(entry: String, value: Variant) -> OptionalType:
     var temp := OptionalType.new(_g.get(entry))
     _g.set(entry, value)
     return temp
 
-## (String) -> void
+## static (String) -> void
 ##
 ## Write to the global space registry.
-func mut_g_void(entry: String, value: Variant) -> void:
+static func mut_g_void(entry: String, value: Variant) -> void:
     _g.set(entry, value)
 
 ## async (float, bool?) -> void
