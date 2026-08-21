@@ -13,19 +13,19 @@ static var _g: Dictionary[String, Variant]
 static func g(entry: String) -> OptionalType:
     return OptionalType.new(_g.get(entry))
 
-## static (String) -> OptionalType<Any>
-##
-## Write to the global space registry. The old value will be returned in an OptionalType.
-static func mut_g(entry: String, value: Variant) -> OptionalType:
-    var temp := OptionalType.new(_g.get(entry))
-    _g.set(entry, value)
-    return temp
-
 ## static (String) -> void
 ##
 ## Write to the global space registry.
-static func mut_g_void(entry: String, value: Variant) -> void:
+static func mut_g(entry: String, value: Variant) -> void:
     _g.set(entry, value)
+
+## static (String) -> OptionalType<Any>
+##
+## Write to the global space registry. The old value will be returned in an OptionalType.
+static func mut_g_returning(entry: String, value: Variant) -> OptionalType:
+    var temp := OptionalType.new(_g.get(entry))
+    _g.set(entry, value)
+    return temp
 
 ## async (float, bool?) -> void
 func wait(how_long: float, in_physics_process: bool = false) -> void:
