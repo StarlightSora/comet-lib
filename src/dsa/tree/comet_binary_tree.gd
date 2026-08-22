@@ -549,7 +549,7 @@ func get_inord_pre_as_bst() -> CometBinaryTree:
 
 # Cleanup Helpers #
 
-## mut (bool?, bool?) -> KVPair<CometBinaryTree?, OptionalType<CometBinaryTree>>
+## mut (bool?, AsBSTBalancingMode?) -> KVPair<CometBinaryTree?, OptionalType<CometBinaryTree>>
 ##
 ## Remove this node from the binary tree. Parent and children nodes will be re-attached accordingly.
 ##
