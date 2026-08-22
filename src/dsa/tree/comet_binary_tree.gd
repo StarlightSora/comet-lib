@@ -70,7 +70,7 @@ static func _default_split_fn(from: Variant, ratio: float) -> ABCTriplet: return
             _r = new_r
 @export var _comp_fn: Callable = _default_comp_fn ## Func(T, T) -> bool
 @export var _eq_fn: Callable = _default_eq_fn ## Func(T, T) -> bool
-@export var _split_fn: Callable = _default_split_fn ## Func(T, float) -> ABCTriplet<T, T, T>
+@export var _split_fn: Callable = _default_split_fn ## Func(T, R) -> ABCTriplet<T, T, T>
 
 var _p: WeakRef = weakref(null) ## WeakRef<CometBinaryTree<T>?>
 
@@ -122,7 +122,7 @@ func eq_fn() -> Callable:
 func mut_eq_fn(fn: Callable) -> void:
     _eq_fn = fn
 
-## () -> (Func(T, float) -> ABCTriplet<T, T, T>)
+## () -> (Func(T, R) -> ABCTriplet<T, T, T>)
 ##
 ## Gets the callable used when splitting.
 ## 
@@ -132,7 +132,7 @@ func mut_eq_fn(fn: Callable) -> void:
 func split_fn() -> Callable:
     return _split_fn
 
-## (Func(T, float) -> ABCTriplet<T, T, T>) -> void
+## (Func(T, R) -> ABCTriplet<T, T, T>) -> void
 ##
 ## Sets the callable used when splitting.
 ##
@@ -426,14 +426,16 @@ func get_first_node_eq_to_as_bst(equals_to: Variant) -> OptionalType:
                 current = current._r
     return OptionalType.new(null)
 
-## mut (float, DeepDuplicateMode?) -> SplitResult:
+## mut (R, DeepDuplicateMode?) -> SplitResult:
 ##
 ## Split the node into one or two children nodes. This is useful for binary space partitioning (BSP), commonly used for procedural generation.
+## 
+## `R` defaults to `float`.
 ##
 ## If this is a leaf node, both the left and right sides will have new nodes assigned with the values split accordingly.
 ## If one side of the node is occupied, then the vacant side will get a new node assigned, with the same value as the current node.
 ## No-op if both sides are occupied.
-func split(split_ratio: float = 0.5, deep_subresources_mode = DeepDuplicateMode.DEEP_DUPLICATE_INTERNAL) -> SplitResult:
+func split(split_ratio: Variant = 0.5, deep_subresources_mode = DeepDuplicateMode.DEEP_DUPLICATE_INTERNAL) -> SplitResult:
     if is_leaf():
         var result: ABCTriplet = _split_fn.call(self._v, split_ratio)
         var new_l = CometBinaryTree.new(result.a())
