@@ -426,14 +426,14 @@ func get_first_node_eq_to_as_bst(equals_to: Variant) -> OptionalType:
                 current = current._r
     return OptionalType.new(null)
 
-## mut (float) -> SplitResult:
+## mut (float, DeepDuplicateMode?) -> SplitResult:
 ##
-## Split the node into one or two children nodes. This is useful for binary space partitioning.
+## Split the node into one or two children nodes. This is useful for binary space partitioning (BSP), commonly used for procedural generation.
 ##
 ## If this is a leaf node, both the left and right sides will have new nodes assigned with the values split accordingly.
 ## If one side of the node is occupied, then the vacant side will get a new node assigned, with the same value as the current node.
 ## No-op if both sides are occupied.
-func split(split_ratio: float = 0.5) -> SplitResult:
+func split(split_ratio: float = 0.5, deep_subresources_mode = DeepDuplicateMode.DEEP_DUPLICATE_INTERNAL) -> SplitResult:
     if is_leaf():
         var result: ABCTriplet = _split_fn.call(self._v, split_ratio)
         var new_l = CometBinaryTree.new(result.a())
@@ -446,13 +446,16 @@ func split(split_ratio: float = 0.5) -> SplitResult:
         return SplitResult.NO_OP
     else:
         var result: ABCTriplet = _split_fn.call(self._v, split_ratio)
+        var clo: Variant = _v
+        if _v.has_method("duplicate_deep"):
+            clo = _v.duplicate_deep(deep_subresources_mode)
         if _l:
-            var new_r = CometBinaryTree.new(_v)
+            var new_r = CometBinaryTree.new(clo)
             mut_r(new_r, CometBinaryTree.LinkAndFreeMode.DIRECT_THEN_DEEP)
             _v = result.c()
             return SplitResult.SPLIT_TO_RIGHT
         elif _r:
-            var new_l = CometBinaryTree.new(_v)
+            var new_l = CometBinaryTree.new(clo)
             mut_l(new_l, CometBinaryTree.LinkAndFreeMode.DIRECT_THEN_DEEP)
             _v = result.c()
             return SplitResult.SPLIT_TO_LEFT
