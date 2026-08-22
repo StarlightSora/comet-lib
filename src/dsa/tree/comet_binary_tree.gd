@@ -20,7 +20,8 @@ enum TraversalMode {
 }
 
 enum AsBSTBalancingMode {
-    NOT_BST,
+    NOT_BST_LEFT,
+    NOT_BST_RIGHT,
     USE_DEEPER,
     ALWAYS_PRE,
     ALWAYS_SUC,
@@ -557,14 +558,16 @@ func get_inord_pre_as_bst() -> CometBinaryTree:
 ##
 ## The value of the returned pair is whatever node that took over the spot of the old node, if any.
 ##
-## Pass something other than `NOT_BST` to `as_bst` to treat this as a binary search tree for this operation.
-## This is disabled by default. This only makes a difference if the current node has children on both sides.
-## `USE_DEEPER` will use the node with a deeper depth to replace the current node. The rest are self-explanetory.
+## Pass something other than `NOT_BST_*` to `as_bst` to treat this as a binary search tree for this operation.
+## This only makes a difference if the current node has children on both sides. Defaults to `NOT_BST_RIGHT`.
+## `NOT_BST_*` will choose the left or right side of the node to replace the current node.
+## `ALWAYS_*` will choose the inorder predecessor or successor to replace the current node.
+## `USE_DEEPER` will use the node with a deeper depth to replace the current node.
 ##
 ## NOTE: If this operation is done on the root node, then the variable that holds the root node
 ## needs to be re-set to the value of the returned pair, otherwise the reference to the entire binary tree will be lost!
 ##
-func remove(then_free: bool = true, as_bst: AsBSTBalancingMode = AsBSTBalancingMode.NOT_BST) -> KVPair:
+func remove(then_free: bool = true, as_bst: AsBSTBalancingMode = AsBSTBalancingMode.NOT_BST_RIGHT) -> KVPair:
     var fin: Callable = func() -> CometBinaryTree:
         if then_free:
             raw_free()
@@ -589,7 +592,7 @@ func remove(then_free: bool = true, as_bst: AsBSTBalancingMode = AsBSTBalancingM
         var side: ChildSide = child_side()
         var parent: CometBinaryTree = _p.get_ref()
         var to_use: CometBinaryTree = null
-        if as_bst != AsBSTBalancingMode.NOT_BST:
+        if as_bst != AsBSTBalancingMode.NOT_BST_RIGHT and as_bst != AsBSTBalancingMode.NOT_BST_LEFT:
             match as_bst:
                 AsBSTBalancingMode.ALWAYS_PRE:
                     to_use = get_inord_pre_as_bst()
@@ -603,7 +606,14 @@ func remove(then_free: bool = true, as_bst: AsBSTBalancingMode = AsBSTBalancingM
                     push_error("Unreachable code!")
                     assert(false, "Unreachable code!")
         else:
-            to_use = _r
+            match as_bst:
+                AsBSTBalancingMode.NOT_BST_LEFT:
+                    to_use = _l
+                AsBSTBalancingMode.NOT_BST_RIGHT:
+                    to_use = _r
+                _:
+                    push_error("Unreachable code!")
+                    assert(false, "Unreachable code!")
         match side:
             ChildSide.LEFT:
                 assert(parent, "Parent should exist!")
