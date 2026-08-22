@@ -40,8 +40,16 @@ enum LinkMode {
     RELINK,
 }
 
+enum SplitResult {
+    SPLIT_TO_BOTH,
+    SPLIT_TO_LEFT,
+    SPLIT_TO_RIGHT,
+    NO_OP,
+}
+
 static func _default_comp_fn(lhs: Variant, rhs: Variant) -> bool: return lhs < rhs
 static func _default_eq_fn(lhs: Variant, rhs: Variant) -> bool: return lhs == rhs
+static func _default_split_fn(from: Variant, ratio: float) -> ABCTriplet: return ABCTriplet.new(from * (1.0 - ratio), from * ratio, from)
 
 @export var _v: Variant ## T
 @export var _l: CometBinaryTree: ## CometBinaryTree<T>?
@@ -62,6 +70,7 @@ static func _default_eq_fn(lhs: Variant, rhs: Variant) -> bool: return lhs == rh
             _r = new_r
 @export var _comp_fn: Callable = _default_comp_fn ## Func(T, T) -> bool
 @export var _eq_fn: Callable = _default_eq_fn ## Func(T, T) -> bool
+@export var _split_fn: Callable = _default_split_fn ## Func(T, float) -> ABCTriplet<T, T, T>
 
 var _p: WeakRef = weakref(null) ## WeakRef<CometBinaryTree<T>?>
 
@@ -112,6 +121,26 @@ func eq_fn() -> Callable:
 ## Sets the callable to use when doing equality checks.
 func mut_eq_fn(fn: Callable) -> void:
     _eq_fn = fn
+
+## () -> (Func(T, float) -> ABCTriplet<T, T, T>)
+##
+## Gets the callable used when splitting.
+## 
+## If this is a leaf node, the first return value will be assigned to the left side, the second to the right, the third to the current node.
+## If one side of the node is occupied, then the vacant side will get the current node's value assigned, then the current node gets the third return value.
+## No-op if both sides are occupied.
+func split_fn() -> Callable:
+    return _split_fn
+
+## (Func(T, float) -> ABCTriplet<T, T, T>) -> void
+##
+## Sets the callable used when splitting.
+##
+## If this is a leaf node, the first return value will be assigned to the left side, the second to the right, the third to the current node.
+## If one side of the node is occupied, then the vacant side will get the current node's value assigned, then the current node gets the third return value.
+## No-op if both sides are occupied.
+func mut_split_fn(fn: Callable) -> void:
+    _split_fn = fn
 
 
 ## () -> T
@@ -396,6 +425,41 @@ func get_first_node_eq_to_as_bst(equals_to: Variant) -> OptionalType:
             else:
                 current = current._r
     return OptionalType.new(null)
+
+## mut (float) -> SplitResult:
+##
+## Split the node into one or two children nodes. This is useful for binary space partitioning.
+##
+## If this is a leaf node, both the left and right sides will have new nodes assigned with the values split accordingly.
+## If one side of the node is occupied, then the vacant side will get a new node assigned, with the same value as the current node.
+## No-op if both sides are occupied.
+func split(split_ratio: float = 0.5) -> SplitResult:
+    if is_leaf():
+        var result: ABCTriplet = _split_fn.call(self._v, split_ratio)
+        var new_l = CometBinaryTree.new(result.a())
+        var new_r = CometBinaryTree.new(result.b())
+        mut_l(new_l, CometBinaryTree.LinkAndFreeMode.DIRECT_THEN_DEEP)
+        mut_r(new_r, CometBinaryTree.LinkAndFreeMode.DIRECT_THEN_DEEP)
+        _v = result.c()
+        return SplitResult.SPLIT_TO_BOTH
+    elif _l and _r:
+        return SplitResult.NO_OP
+    else:
+        var result: ABCTriplet = _split_fn.call(self._v, split_ratio)
+        if _l:
+            var new_r = CometBinaryTree.new(_v)
+            mut_r(new_r, CometBinaryTree.LinkAndFreeMode.DIRECT_THEN_DEEP)
+            _v = result.c()
+            return SplitResult.SPLIT_TO_RIGHT
+        elif _r:
+            var new_l = CometBinaryTree.new(_v)
+            mut_l(new_l, CometBinaryTree.LinkAndFreeMode.DIRECT_THEN_DEEP)
+            _v = result.c()
+            return SplitResult.SPLIT_TO_LEFT
+        else:
+            push_error("Unreachable code!")
+            assert(false, "Unreachable code!")
+            return SplitResult.NO_OP
 
 # Traversal Algorithms #
 
