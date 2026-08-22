@@ -27,6 +27,19 @@ enum AsBSTBalancingMode {
     ALWAYS_SUC,
 }
 
+enum LinkAndFreeMode {
+    RELINK_THEN_NONE,
+    RELINK_THEN_SHALLOW,
+    DIRECT_THEN_NONE,
+    DIRECT_THEN_SHALLOW,
+    DIRECT_THEN_DEEP,
+}
+
+enum LinkMode {
+    DIRECT,
+    RELINK,
+}
+
 static func _default_comp_fn(lhs: Variant, rhs: Variant) -> bool: return lhs < rhs
 static func _default_eq_fn(lhs: Variant, rhs: Variant) -> bool: return lhs == rhs
 
@@ -67,7 +80,7 @@ func _init(has: Variant = null) -> void:
 ## This will cause descendant nodes to freed as well,
 ## unless it (or one of its ancestor) is still being referenced by external variables.
 ##
-## Call `free_all` instead to explicitly free all descendants.
+## Call `free_all` instead to explicitly free all descendants. Call `remove` instead to automatically re-link broken links.
 ##
 ## In essence, this calls `self.detatch_all()` then `super.free()`.
 func free() -> void: # override
@@ -143,24 +156,46 @@ func has_l() -> bool:
 func l() -> OptionalType:
     return OptionalType.new(_l)
 
-## mut (CometBinaryTree<T>?) -> void
+## mut (CometBinaryTree<T>?, LinkAndFreeMode?) -> void
 ##
 ## Sets the left child of this node.
-func mut_l(new_l: CometBinaryTree) -> void:
+## By default, the children of the old left child will relinked to the new left child then be shallow-freed.
+func mut_l(new_l: CometBinaryTree, then_free_old: LinkAndFreeMode = LinkAndFreeMode.RELINK_THEN_SHALLOW) -> void:
     if _l:
+        if new_l and (then_free_old == LinkAndFreeMode.RELINK_THEN_SHALLOW or then_free_old == LinkAndFreeMode.RELINK_THEN_NONE):
+            new_l._l = _l._l
+            new_l._r = _l._r
+            if _l._l: _l._l._p = weakref(new_l)
+            if _l._r: _l._r._p = weakref(new_l)
         _l.detatch_parent()
+        if new_l and then_free_old == LinkAndFreeMode.RELINK_THEN_NONE:
+            _l._l = null
+            _l._r = null
+        if then_free_old == LinkAndFreeMode.DIRECT_THEN_DEEP:
+            _l.free_all()
+        elif then_free_old == LinkAndFreeMode.DIRECT_THEN_SHALLOW or then_free_old == LinkAndFreeMode.RELINK_THEN_SHALLOW:
+            _l.free()
     _l = new_l
     if _l:
         _l._p = weakref(self)
 
-## mut (CometBinaryTree<T>?) -> OptionalType<CometBinaryTree<T>>
+## mut (CometBinaryTree<T>?, LinkMode?) -> OptionalType<CometBinaryTree<T>>
 ##
 ## Sets the left child of this node. Returns the old left child.
-func mut_l_returning(new_l: CometBinaryTree) -> OptionalType:
+## By default, the children of the old left child will be relinked to the new left child.
+func mut_l_returning(new_l: CometBinaryTree, then_: LinkMode = LinkMode.RELINK) -> OptionalType:
     var temp: CometBinaryTree = null
     if _l:
         temp = _l
-        _l.detatch_parent_returning()
+        if new_l and then_ == LinkMode.RELINK:
+            new_l._l = _l._l
+            new_l._r = _l._r
+            if _l._l: _l._l._p = weakref(new_l)
+            if _l._r: _l._r._p = weakref(new_l)
+        _l.detatch_parent()
+        if new_l and then_ == LinkMode.RELINK:
+            _l._l = null
+            _l._r = null
     _l = new_l
     if _l:
         _l._p = weakref(self)
@@ -177,24 +212,46 @@ func has_r() -> bool:
 func r() -> OptionalType:
     return OptionalType.new(_r)
 
-## mut (CometBinaryTree<T>?) -> void
+## mut (CometBinaryTree<T>?, LinkAndFreeMode?) -> void
 ##
 ## Sets the right child of this node.
-func mut_r(new_r: CometBinaryTree) -> void:
+## By default, the children of the old right child will relinked to the new right child then be shallow-freed.
+func mut_r(new_r: CometBinaryTree, then_free_old: LinkAndFreeMode = LinkAndFreeMode.RELINK_THEN_SHALLOW) -> void:
     if _r:
+        if new_r and (then_free_old == LinkAndFreeMode.RELINK_THEN_SHALLOW or then_free_old == LinkAndFreeMode.RELINK_THEN_NONE):
+            new_r._l = _r._l
+            new_r._r = _r._r
+            if _r._l: _r._l._p = weakref(new_r)
+            if _r._r: _r._r._p = weakref(new_r)
         _r.detatch_parent()
+        if new_r and then_free_old == LinkAndFreeMode.RELINK_THEN_NONE:
+            _r._l = null
+            _r._r = null
+        if then_free_old == LinkAndFreeMode.DIRECT_THEN_DEEP:
+            _r.free_all()
+        elif then_free_old == LinkAndFreeMode.DIRECT_THEN_SHALLOW or then_free_old == LinkAndFreeMode.RELINK_THEN_SHALLOW:
+            _r.free()
     _r = new_r
     if _r:
         _r._p = weakref(self)
 
-## mut (CometBinaryTree<T>?) -> OptionalType<CometBinaryTree<T>>
+## mut (CometBinaryTree<T>?, LinkMode?) -> OptionalType<CometBinaryTree<T>>
 ##
 ## Sets the right child of this node. Returns the old right child.
-func mut_r_returning(new_r: CometBinaryTree) -> OptionalType:
+## By default, the children of the old right child will be relinked to the new right child.
+func mut_r_returning(new_r: CometBinaryTree, then_: LinkMode = LinkMode.RELINK) -> OptionalType:
     var temp: CometBinaryTree = null
     if _r:
         temp = _r
-        _r.detatch_parent_returning()
+        if new_r and then_ == LinkMode.RELINK:
+            new_r._l = _r._l
+            new_r._r = _r._r
+            if _r._l: _r._l._p = weakref(new_r)
+            if _r._r: _r._r._p = weakref(new_r)
+        if new_r and then_ == LinkMode.RELINK:
+            _r._l = null
+            _r._r = null
+        _r.detatch_parent()
     _r = new_r
     if _r:
         _r._p = weakref(self)
