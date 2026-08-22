@@ -57,7 +57,7 @@ func _init(has: Variant = null) -> void:
 ##
 ## Free this node, detaching all parent and children nodes from it.
 ## This will cause descendant nodes to freed as well,
-## unless it (or one of its ancestor) is still being referenced by an external variable.
+## unless it (or one of its ancestor) is still being referenced by external variables.
 ##
 ## Call `free_all` instead to explicitly free all descendants.
 ##
@@ -239,7 +239,7 @@ func balanceness() -> float:
 
 ## (T) -> CometBinaryTree<T>
 ##
-## Add the node, treating the binary tree as a binary search tree.
+## Add a node with the given value, treating the binary tree as a binary search tree.
 func add_as_bst(value: Variant, from: CometBinaryTree = self) -> CometBinaryTree:
     if _comp_fn.call(value, from._v):
         if from._l:
@@ -305,6 +305,28 @@ func get_nodes_eq_to(equals_to: Variant, traversal_mode: TraversalMode = Travers
 ## Get the first node that has the same value as the given value. Equivalent to calling `first_traverse`.
 func get_first_node_eq_to(equals_to: Variant, traversal_mode: TraversalMode = TraversalMode.INORD) -> OptionalType:
     return first_traverse(equals_to, traversal_mode)
+
+## (T) -> OptionalType<CometBinaryTree<T>>
+##
+## Get the first node that has the same value as the given value, treating the binary tree as a binary search tree.
+## This is faster than using `get_first_node_eq_to` if you know that this is a binary search tree.
+func get_first_node_eq_to_as_bst(equals_to: Variant) -> OptionalType:
+    var current: CometBinaryTree = self
+    while true:
+        if _eq_fn.call(current._v, equals_to):
+            return OptionalType.new(current)
+        else:
+            if _comp_fn.call(equals_to, current._v):
+                if current._l:
+                    current = current._l
+                else:
+                    break
+            else:
+                if current._r:
+                    current = current._r
+                else:
+                    break
+    return OptionalType.new(null)
 
 # Traversal Algorithms #
 
