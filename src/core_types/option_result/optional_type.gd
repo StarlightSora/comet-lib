@@ -227,7 +227,7 @@ func transpose_as_dupe(deep_subresources_mode: DeepDuplicateMode = DeepDuplicate
     if _exists:
         if _held is ResultType:
             if _held._ok:
-                if _held._held.has_method("duplicate_deep"):
+                if _held is Object and _held._held.has_method("duplicate_deep"):
                     return ResultType.new(true, OptionalType.new(_held._held.duplicate_deep(deep_subresources_mode)))
                 else:
                     return ResultType.new(true, OptionalType.new(_held._held))

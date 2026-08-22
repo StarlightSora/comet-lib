@@ -28,12 +28,14 @@ static func mut_g_returning(entry: String, value: Variant) -> OptionalType:
     return temp
 
 ## async (float, bool?) -> void
+##
+## Use `await` on the call site.
 func wait(how_long: float, in_physics_process: bool = false) -> void:
     await get_tree().create_timer(how_long, true, in_physics_process).timeout
 
 ## async (float, bool?) => float
 ##
-## Return value is the actual time spent yielding.
+## Use `await` on the call site. Return value is the actual time spent yielding.
 func wait_returning(how_long: float, in_physics_process: bool = false) -> float:
     var start: int = Time.get_ticks_usec()
     await get_tree().create_timer(how_long, true, in_physics_process).timeout
@@ -41,13 +43,13 @@ func wait_returning(how_long: float, in_physics_process: bool = false) -> float:
 
 ## async (float, bool?) -> void
 ##
-## Ignores `Engine.time_scale`.
+## Use `await` on the call site. Ignores `Engine.time_scale`.
 func wait_real(how_long: float, in_physics_process: bool = false) -> void:
     await get_tree().create_timer(how_long, true, in_physics_process, true).timeout
 
 ## async (float, bool?) => float
 ##
-## Ignores `Engine.time_scale`.
+## Use `await` on the call site. Ignores `Engine.time_scale`.
 ## Return value is the actual time spent yielding.
 func wait_real_returning(how_long: float, in_physics_process: bool = false) -> float:
     var start: int = Time.get_ticks_usec()

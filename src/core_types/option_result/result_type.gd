@@ -44,7 +44,7 @@ func ok() -> OptionalType:
 ## where T: CanDuplicate
 func ok_as_dupe(deep_subresources_mode: DeepDuplicateMode = DeepDuplicateMode.DEEP_DUPLICATE_INTERNAL) -> OptionalType:
     if _ok:
-        if _held.has_method("duplicate_deep"):
+        if _held is Object and _held.has_method("duplicate_deep"):
             return OptionalType.new(_held.duplicate_deep(deep_subresources_mode))
         else:
             return OptionalType.new(_held)
@@ -64,7 +64,7 @@ func err_as_dupe(deep_subresources_mode: DeepDuplicateMode = DeepDuplicateMode.D
     if _ok:
         return OptionalType.new(null)
     else:
-        if _held.has_method("duplicate_deep"):
+        if _held is Object and _held.has_method("duplicate_deep"):
             return OptionalType.new(_held.duplicate_deep(deep_subresources_mode))
         else:
             return OptionalType.new(_held)

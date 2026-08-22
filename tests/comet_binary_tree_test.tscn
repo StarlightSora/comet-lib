@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://clegan2qubv0d"]
+
+[ext_resource type="Script" uid="uid://yle2b68hgrjy" path="res://comet-lib/tests/comet_binary_tree_test.gd" id="1_2kqj0"]
+[ext_resource type="Script" uid="uid://tcn5d05a2ayg" path="res://comet-lib/src/dsa/tree/comet_binary_tree.gd" id="2_p0trs"]
+
+[sub_resource type="Resource" id="Resource_ycs0g"]
+script = ExtResource("2_p0trs")
+_comp_fn = null
+_eq_fn = null
+_split_fn = null
+value__ = 32
+metadata/_custom_type_script = "uid://tcn5d05a2ayg"
+
+[sub_resource type="Resource" id="Resource_2kqj0"]
+script = ExtResource("2_p0trs")
+_comp_fn = null
+_eq_fn = null
+_split_fn = null
+left__ = SubResource("Resource_ycs0g")
+value__ = 24
+metadata/_custom_type_script = "uid://tcn5d05a2ayg"
+
+[node name="CometBinaryTreeTest" type="Node3D" unique_id=1565341488]
+script = ExtResource("1_2kqj0")
+data = Dictionary[String, ExtResource("2_p0trs")]({
+"a": SubResource("Resource_2kqj0")
+})

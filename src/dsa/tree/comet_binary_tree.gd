@@ -1,6 +1,5 @@
 ## The CometBinaryTree type is in essence, a doubly linked binary tree,
 ## with helper functions that lets it mimic other binary tree types.
-@tool
 class_name CometBinaryTree
 extends Resource
 
@@ -27,7 +26,7 @@ enum AsBSTBalancingMode {
     ALWAYS_SUC,
 }
 
-enum LinkAndFreeMode {
+enum LinkAndOrphanMode {
     RELINK_THEN_NONE,
     RELINK_THEN_SHALLOW,
     DIRECT_THEN_NONE,
@@ -51,30 +50,42 @@ static func _default_comp_fn(lhs: Variant, rhs: Variant) -> bool: return lhs < r
 static func _default_eq_fn(lhs: Variant, rhs: Variant) -> bool: return lhs == rhs
 static func _default_split_fn(from: Variant, ratio: float) -> ABCTriplet: return ABCTriplet.new(from * (1.0 - ratio), from * ratio, from)
 
-@export var _v: Variant ## T
-@export var _l: CometBinaryTree: ## CometBinaryTree<T>?
-    set(new_l):
-        if Engine.is_editor_hint():
-            if _l:
-                _l._p = weakref(null)
-            if new_l:
-                new_l._p = weakref(self)
-            _l = new_l
-@export var _r: CometBinaryTree: ## CometBinaryTree<T>?
-    set(new_r):
-        if Engine.is_editor_hint():
-            if _r:
-                _r._p = weakref(null)
-            if new_r:
-                new_r._p = weakref(self)
-            _r = new_r
+static var debug_mode: bool = true 
+
 @export var _comp_fn: Callable = _default_comp_fn ## Func(T, T) -> bool
 @export var _eq_fn: Callable = _default_eq_fn ## Func(T, T) -> bool
 @export var _split_fn: Callable = _default_split_fn ## Func(T, R) -> ABCTriplet<T, T, T>
 
-var _p: WeakRef = weakref(null) ## WeakRef<CometBinaryTree<T>?>
+@export var left__: CometBinaryTree: ## CometBinaryTree<T>?
+    set(new_l):
+        if _l:
+            _l._p = weakref(null)
+        if new_l:
+            new_l._p = weakref(self)
+        _l = new_l
+@export var right__: CometBinaryTree: ## CometBinaryTree<T>?
+    set(new_r):
+        if _r:
+            _r._p = weakref(null)
+        if new_r:
+            new_r._p = weakref(self)
+        _r = new_r
+@export var value__: Variant: ## T
+    set(new_v):
+        _v = new_v
 
-# Overrides #
+var _p: WeakRef = weakref(null) ## WeakRef<CometBinaryTree<T>?>
+var _l: CometBinaryTree ## CometBinaryTree<T>?
+var _r: CometBinaryTree ## CometBinaryTree<T>?
+var _v: Variant ## T
+
+func _notification(what: int) -> void:
+    if not debug_mode: return
+    match what:
+        NOTIFICATION_PREDELETE:
+            print("Freeing a CometBinaryTree node!")
+
+# Constructors #
 
 ## (T) -> CometBinaryTree<T>
 ##
@@ -82,19 +93,6 @@ var _p: WeakRef = weakref(null) ## WeakRef<CometBinaryTree<T>?>
 ## (not to be confused with Godot's `Node` type)
 func _init(has: Variant = null) -> void:
     _v = has
-
-## mut () -> void
-##
-## Free this node, detaching all parent and children nodes from it.
-## This will cause descendant nodes to freed as well,
-## unless it (or one of its ancestor) is still being referenced by external variables.
-##
-## Call `free_all` instead to explicitly free all descendants. Call `remove` instead to automatically re-link broken links.
-##
-## In essence, this calls `self.detatch_all()` then `super.free()`.
-func free() -> void: # override
-    detatch_all()
-    super.free()
 
 # Naive Getters / Setters #
 
@@ -185,25 +183,25 @@ func has_l() -> bool:
 func l() -> OptionalType:
     return OptionalType.new(_l)
 
-## mut (CometBinaryTree<T>?, LinkAndFreeMode?) -> void
+## mut (CometBinaryTree<T>?, LinkAndOrphanMode?) -> void
 ##
 ## Sets the left child of this node.
-## By default, the children of the old left child will relinked to the new left child then be shallow-freed.
-func mut_l(new_l: CometBinaryTree, then_free_old: LinkAndFreeMode = LinkAndFreeMode.RELINK_THEN_SHALLOW) -> void:
+## By default, the children of the old left child will relinked to the new left child then be shallow-orphaned.
+func mut_l(new_l: CometBinaryTree, then_orphan_old: LinkAndOrphanMode = LinkAndOrphanMode.RELINK_THEN_SHALLOW) -> void:
     if _l:
-        if new_l and (then_free_old == LinkAndFreeMode.RELINK_THEN_SHALLOW or then_free_old == LinkAndFreeMode.RELINK_THEN_NONE):
+        if new_l and (then_orphan_old == LinkAndOrphanMode.RELINK_THEN_SHALLOW or then_orphan_old == LinkAndOrphanMode.RELINK_THEN_NONE):
             new_l._l = _l._l
             new_l._r = _l._r
             if _l._l: _l._l._p = weakref(new_l)
             if _l._r: _l._r._p = weakref(new_l)
         _l.detatch_parent()
-        if new_l and then_free_old == LinkAndFreeMode.RELINK_THEN_NONE:
+        if new_l and then_orphan_old == LinkAndOrphanMode.RELINK_THEN_NONE:
             _l._l = null
             _l._r = null
-        if then_free_old == LinkAndFreeMode.DIRECT_THEN_DEEP:
-            _l.free_all()
-        elif then_free_old == LinkAndFreeMode.DIRECT_THEN_SHALLOW or then_free_old == LinkAndFreeMode.RELINK_THEN_SHALLOW:
-            _l.free()
+        if then_orphan_old == LinkAndOrphanMode.DIRECT_THEN_DEEP:
+            _l.orphan_all()
+        elif then_orphan_old == LinkAndOrphanMode.DIRECT_THEN_SHALLOW or then_orphan_old == LinkAndOrphanMode.RELINK_THEN_SHALLOW:
+            _l.detatch_all()
     _l = new_l
     if _l:
         _l._p = weakref(self)
@@ -241,25 +239,25 @@ func has_r() -> bool:
 func r() -> OptionalType:
     return OptionalType.new(_r)
 
-## mut (CometBinaryTree<T>?, LinkAndFreeMode?) -> void
+## mut (CometBinaryTree<T>?, LinkAndOrphanMode?) -> void
 ##
 ## Sets the right child of this node.
-## By default, the children of the old right child will relinked to the new right child then be shallow-freed.
-func mut_r(new_r: CometBinaryTree, then_free_old: LinkAndFreeMode = LinkAndFreeMode.RELINK_THEN_SHALLOW) -> void:
+## By default, the children of the old right child will relinked to the new right child then be shallow-orphaned.
+func mut_r(new_r: CometBinaryTree, then_orphan_old: LinkAndOrphanMode = LinkAndOrphanMode.RELINK_THEN_SHALLOW) -> void:
     if _r:
-        if new_r and (then_free_old == LinkAndFreeMode.RELINK_THEN_SHALLOW or then_free_old == LinkAndFreeMode.RELINK_THEN_NONE):
+        if new_r and (then_orphan_old == LinkAndOrphanMode.RELINK_THEN_SHALLOW or then_orphan_old == LinkAndOrphanMode.RELINK_THEN_NONE):
             new_r._l = _r._l
             new_r._r = _r._r
             if _r._l: _r._l._p = weakref(new_r)
             if _r._r: _r._r._p = weakref(new_r)
         _r.detatch_parent()
-        if new_r and then_free_old == LinkAndFreeMode.RELINK_THEN_NONE:
+        if new_r and then_orphan_old == LinkAndOrphanMode.RELINK_THEN_NONE:
             _r._l = null
             _r._r = null
-        if then_free_old == LinkAndFreeMode.DIRECT_THEN_DEEP:
-            _r.free_all()
-        elif then_free_old == LinkAndFreeMode.DIRECT_THEN_SHALLOW or then_free_old == LinkAndFreeMode.RELINK_THEN_SHALLOW:
-            _r.free()
+        if then_orphan_old == LinkAndOrphanMode.DIRECT_THEN_DEEP:
+            _r.orphan_all()
+        elif then_orphan_old == LinkAndOrphanMode.DIRECT_THEN_SHALLOW or then_orphan_old == LinkAndOrphanMode.RELINK_THEN_SHALLOW:
+            _r.detatch_all()
     _r = new_r
     if _r:
         _r._p = weakref(self)
@@ -339,21 +337,18 @@ func balanceness() -> float:
 func add_as_bst(value: Variant, from: CometBinaryTree = self) -> CometBinaryTree:
     if _comp_fn.call(value, from._v):
         if from._l:
-            add_as_bst(value, from._l)
+            return add_as_bst(value, from._l)
         else:
             var new_node: CometBinaryTree = CometBinaryTree.new(value)
             from.mut_l(new_node)
             return new_node
     else:
         if from._r:
-            add_as_bst(value, from._r)
+            return add_as_bst(value, from._r)
         else:
             var new_node: CometBinaryTree = CometBinaryTree.new(value)
             from.mut_r(new_node)
             return new_node
-    push_error("Unreachable code!")
-    assert(false, "Unreachable code!")
-    return CometBinaryTree.new(null)
 
 ## () -> bool
 ##
@@ -440,8 +435,8 @@ func split(split_ratio: Variant = 0.5, deep_subresources_mode = DeepDuplicateMod
         var result: ABCTriplet = _split_fn.call(self._v, split_ratio)
         var new_l = CometBinaryTree.new(result.a())
         var new_r = CometBinaryTree.new(result.b())
-        mut_l(new_l, CometBinaryTree.LinkAndFreeMode.DIRECT_THEN_DEEP)
-        mut_r(new_r, CometBinaryTree.LinkAndFreeMode.DIRECT_THEN_DEEP)
+        mut_l(new_l, CometBinaryTree.LinkAndOrphanMode.DIRECT_THEN_DEEP)
+        mut_r(new_r, CometBinaryTree.LinkAndOrphanMode.DIRECT_THEN_DEEP)
         _v = result.c()
         return SplitResult.SPLIT_TO_BOTH
     elif _l and _r:
@@ -449,16 +444,16 @@ func split(split_ratio: Variant = 0.5, deep_subresources_mode = DeepDuplicateMod
     else:
         var result: ABCTriplet = _split_fn.call(self._v, split_ratio)
         var clo: Variant = _v
-        if _v.has_method("duplicate_deep"):
+        if _v is Object and _v.has_method("duplicate_deep"):
             clo = _v.duplicate_deep(deep_subresources_mode)
         if _l:
             var new_r = CometBinaryTree.new(clo)
-            mut_r(new_r, CometBinaryTree.LinkAndFreeMode.DIRECT_THEN_DEEP)
+            mut_r(new_r, CometBinaryTree.LinkAndOrphanMode.DIRECT_THEN_DEEP)
             _v = result.c()
             return SplitResult.SPLIT_TO_RIGHT
         elif _r:
             var new_l = CometBinaryTree.new(clo)
-            mut_l(new_l, CometBinaryTree.LinkAndFreeMode.DIRECT_THEN_DEEP)
+            mut_l(new_l, CometBinaryTree.LinkAndOrphanMode.DIRECT_THEN_DEEP)
             _v = result.c()
             return SplitResult.SPLIT_TO_LEFT
         else:
@@ -672,6 +667,19 @@ func get_inord_pre_as_bst() -> CometBinaryTree:
         cur = cur._r
     return cur
 
+# Debug Helpers #
+
+## () -> String
+##
+## Returns the relevant data of this node for debugging, in compact form.
+func dbg() -> String:
+    return str(self) + "={ value: " + str(_v) + ", left: " + str(_l) + ", right: " + str(_r) + ", up: " + str(_p.get_ref()) + ", depth: " + str(depth()) + " };"
+
+## () -> String
+##
+## Returns the relevant data of this node for debugging, in beautified form.
+func fdbg() -> String:
+    return str(self) + " = {\n  value: " + str(_v) + ",\n  left: " + str(_l) + ",\n  right: " + str(_r) + ",\n  up: " + str(_p.get_ref()) + ",\n  depth: " + str(depth()) + "\n};"
 
 # Cleanup Helpers #
 
@@ -679,8 +687,8 @@ func get_inord_pre_as_bst() -> CometBinaryTree:
 ##
 ## Remove this node from the binary tree. Parent and children nodes will be re-attached accordingly.
 ##
-## If `then_free`, then the key of the returned pair will **always** be `null` because `self` will explicitly be freed.
-## Otherwise it will **always** be `self`, after it is orphaned. This is enabled by default.
+## If `ignore_old`, then the key of the returned pair will **always** be `null`, discarding the old node's reference.
+## Otherwise it will **always** be `self`, after it is orphaned. `ignore_old` is enabled by default.
 ##
 ## The value of the returned pair is whatever node that took over the spot of the old node, if any.
 ##
@@ -691,15 +699,14 @@ func get_inord_pre_as_bst() -> CometBinaryTree:
 ## NOTE: If this operation is done on the root node, then the variable that holds the root node
 ## needs to be re-set to the value of the returned pair, otherwise the reference to the entire binary tree will be lost!
 ##
-func remove(then_free: bool = true, as_bst: AsBSTBalancingMode = AsBSTBalancingMode.NOT_BST_RIGHT) -> KVPair:
+func remove(ignore_old: bool = true, as_bst: AsBSTBalancingMode = AsBSTBalancingMode.NOT_BST_RIGHT) -> KVPair:
     var fin: Callable = func() -> CometBinaryTree:
-        if then_free:
-            raw_free()
+        _l = null
+        _r = null
+        _p = weakref(null)
+        if ignore_old:
             return null
         else:
-            _l = null
-            _r = null
-            _p = weakref(null)
             return self
     if is_leaf():
         var side: ChildSide = child_side()
@@ -738,6 +745,7 @@ func remove(then_free: bool = true, as_bst: AsBSTBalancingMode = AsBSTBalancingM
                 _:
                     push_error("Unreachable code!")
                     assert(false, "Unreachable code!")
+        to_use.detatch_all()
         match side:
             ChildSide.LEFT:
                 assert(parent, "Parent should exist!")
@@ -749,11 +757,12 @@ func remove(then_free: bool = true, as_bst: AsBSTBalancingMode = AsBSTBalancingM
                 parent._r = to_use
             _:
                 to_use._p = weakref(null)
-        
-        _l._p = weakref(to_use)
-        _r._p = weakref(to_use)
-        to_use._l = _l if _l != to_use else null
-        to_use._r = _r if _r != to_use else null
+        if _l and _l != to_use:
+            _l._p = weakref(to_use)
+            to_use._l = _l
+        if _r and _r != to_use:
+            _r._p = weakref(to_use)
+            to_use._r = _r
         return KVPair.new(fin.call(), OptionalType.new(to_use))
     else:
         var side: ChildSide = child_side()
@@ -780,30 +789,6 @@ func remove(then_free: bool = true, as_bst: AsBSTBalancingMode = AsBSTBalancingM
                     parent._r = _r
             _r._p = _p
         return KVPair.new(fin.call(), OptionalType.new(old))
-
-## mut () -> void
-##
-## Free this node, *without* explicitly detaching all parent and children nodes from it. Only call this if you really know what you're doing.
-##
-## In essence, this calls `super.free()` *without* `self.detatch_all()`.
-func raw_free() -> void:
-    super.free()
-
-## mut () -> void
-##
-## Explicitly free this and all descendant nodes.
-func free_all() -> void:
-    var nodes: Array[CometBinaryTree] = get_postord()
-    for node in nodes:
-        node.raw_free()
-
-## mut () -> void
-##
-## Explicitly free all descendant nodes, but not `self`.
-func free_descendants() -> void:
-    var nodes: Array[CometBinaryTree] = get_postord()
-    for node in nodes.slice(0, nodes.size() - 1):
-        node.raw_free()
 
 ## mut () -> void
 ##
