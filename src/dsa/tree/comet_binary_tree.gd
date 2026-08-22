@@ -426,7 +426,7 @@ func get_first_node_eq_to_as_bst(equals_to: Variant) -> OptionalType:
                 current = current._r
     return OptionalType.new(null)
 
-## mut (R, DeepDuplicateMode?) -> SplitResult:
+## mut (R?, DeepDuplicateMode?) -> SplitResult:
 ##
 ## Split the node into one or two children nodes. This is useful for binary space partitioning (BSP), commonly used for procedural generation.
 ## 
