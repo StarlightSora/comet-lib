@@ -560,9 +560,7 @@ func get_inord_pre_as_bst() -> CometBinaryTree:
 ##
 ## Pass something other than `NOT_BST_*` to `as_bst` to treat this as a binary search tree for this operation.
 ## This only makes a difference if the current node has children on both sides. Defaults to `NOT_BST_RIGHT`.
-## `NOT_BST_*` will choose the left or right side of the node to replace the current node.
-## `ALWAYS_*` will choose the inorder predecessor or successor to replace the current node.
-## `USE_DEEPER` will use the node with a deeper depth to replace the current node.
+## In particular, `USE_DEEPER` will use the node with a deeper depth to replace the current node.
 ##
 ## NOTE: If this operation is done on the root node, then the variable that holds the root node
 ## needs to be re-set to the value of the returned pair, otherwise the reference to the entire binary tree will be lost!
