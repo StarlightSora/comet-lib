@@ -1,0 +1,576 @@
+## The CometBinaryTree type is in essence, a doubly linked binary tree,
+## with helper functions that lets it mimic other binary tree types.
+@tool
+class_name CometBinaryTree
+extends Resource
+
+enum ChildSide {
+    NONE,
+    LEFT,
+    RIGHT,
+    UNKNOWN,
+}
+
+enum TraversalMode {
+    INORD,
+    PREORD,
+    POSTORD,
+    LEVELORD,
+    SURFACE,
+}
+
+static func _default_comp_fn(lhs: Variant, rhs: Variant) -> bool: return lhs < rhs
+static func _default_eq_fn(lhs: Variant, rhs: Variant) -> bool: return lhs == rhs
+
+@export var _v: Variant ## T
+@export var _l: CometBinaryTree: ## CometBinaryTree<T>?
+    set(new_l):
+        if Engine.is_editor_hint():
+            if _l:
+                _l._p = weakref(null)
+            if new_l:
+                new_l._p = weakref(self)
+            _l = new_l
+@export var _r: CometBinaryTree: ## CometBinaryTree<T>?
+    set(new_r):
+        if Engine.is_editor_hint():
+            if _r:
+                _r._p = weakref(null)
+            if new_r:
+                new_r._p = weakref(self)
+            _r = new_r
+@export var _comp_fn: Callable = _default_comp_fn ## Func(T, T) -> bool
+@export var _eq_fn: Callable = _default_eq_fn ## Func(T, T) -> bool
+
+var _p: WeakRef = weakref(null) ## WeakRef<CometBinaryTree<T>?>
+
+# Overrides #
+
+## (T) -> CometBinaryTree<T>
+##
+## Creates a new `CometBinaryTree` node.
+## (not to be confused with Godot's `Node` type)
+func _init(has: Variant = null) -> void:
+    _v = has
+
+## mut () -> void
+##
+## Free this node, detaching all parent and children nodes from it.
+## This will cause descendant nodes to freed as well,
+## unless it (or one of its ancestor) is still being referenced by an external variable.
+##
+## Call `free_all` instead to explicitly free all descendants.
+##
+## In essence, this calls `self.detatch_all()` then `super.free()`.
+func free() -> void: # override
+    detatch_all()
+    super.free()
+
+# Naive Getters / Setters #
+
+## () -> (Func(T, T) -> bool)
+##
+## Gets the callable used when doing comparisons.
+func comp_fn() -> Callable:
+    return _comp_fn
+
+## mut (Func(T, T) -> bool) -> void
+##
+## Sets the callable to use when doing comparisons.
+func mut_comp_fn(fn: Callable) -> void:
+    _comp_fn = fn
+
+## () -> (Func(T, T) -> bool)
+##
+## Gets the callable used when doing equality checks.
+func eq_fn() -> Callable:
+    return _eq_fn
+
+## mut (Func(T, T) -> bool) -> void
+##
+## Sets the callable to use when doing equality checks.
+func mut_qu_fn(fn: Callable) -> void:
+    _eq_fn = fn
+
+
+## () -> T
+##
+## Gets the value of this node.
+func v() -> Variant:
+    return _v
+
+## mut (T) -> void
+##
+## Sets the value of this node.
+func mut_v(new_v) -> void:
+    _v = new_v
+
+## mut (T) -> T
+##
+## Sets the value of this node, and returns the old value.
+func mut_v_returning(new_v) -> Variant:
+    var temp: Variant = _v
+    _v = new_v
+    return temp
+
+
+## () -> bool
+func has_p() -> bool:
+    return true if _p.get_ref() else false
+
+## () -> OptionalType<CometBinaryTree<T>>
+##
+## Gets the parent of this node.
+func p() -> OptionalType:
+    return OptionalType.new(_p.get_ref())
+
+
+## () -> bool
+func has_l() -> bool:
+    return true if _l else false
+
+## () -> OptionalType<CometBinaryTree<T>>
+##
+## Gets the left child of this node.
+func l() -> OptionalType:
+    return OptionalType.new(_l)
+
+## mut (CometBinaryTree<T>?) -> void
+##
+## Sets the left child of this node.
+func mut_l(new_l: CometBinaryTree) -> void:
+    if _l:
+        _l.detatch_parent()
+    _l = new_l
+    _l._p = weakref(self)
+
+## mut (CometBinaryTree<T>?) -> OptionalType<CometBinaryTree<T>>
+##
+## Sets the left child of this node. Returns the old left child.
+func mut_l_returning(new_l: CometBinaryTree) -> OptionalType:
+    var temp: CometBinaryTree = null
+    if _l:
+        temp = _l
+        _l.detatch_parent_returning()
+    _l = new_l
+    _l._p = weakref(self)
+    return OptionalType.new(temp)
+
+
+## () -> bool
+func has_r() -> bool:
+    return true if _r else false
+
+## () -> OptionalType<CometBinaryTree<T>>
+##
+## Gets the right child of this node.
+func r() -> OptionalType:
+    return OptionalType.new(_r)
+
+## mut (CometBinaryTree<T>?) -> void
+##
+## Sets the right child of this node.
+func mut_r(new_r: CometBinaryTree) -> void:
+    if _r:
+        _r.detatch_parent()
+    _r = new_r
+    _r._p = weakref(self)
+
+## mut (CometBinaryTree<T>?) -> OptionalType<CometBinaryTree<T>>
+##
+## Sets the right child of this node. Returns the old right child.
+func mut_r_returning(new_r: CometBinaryTree) -> OptionalType:
+    var temp: CometBinaryTree = null
+    if _r:
+        temp = _r
+        _r.detatch_parent_returning()
+    _r = new_r
+    _r._p = weakref(self)
+    return OptionalType.new(temp)
+
+# Relation Checkers #
+
+## () -> ChildSide
+func child_side() -> ChildSide:
+    var parent: CometBinaryTree = _p.get_ref()
+    if parent:
+        if parent._l == self: return ChildSide.LEFT
+        elif parent._r == self: return ChildSide.RIGHT
+        else: return ChildSide.UNKNOWN
+    else: return ChildSide.NONE
+
+## () -> bool
+func is_leaf() -> bool:
+    if not _l and not _r: return true
+    else: return false
+
+# Algorithmic Getters / Setters / Checkers #
+
+## () -> int
+##
+## Starts from 1, where a value of 1 indicates that this is the root node.
+func depth() -> int:
+    return get_surface().size()
+
+## () -> int
+##
+## Starts from 1, where a value of 1 indicates that the deepest node is the root node.
+func max_depth() -> int:
+    var arr := get_levelord()
+    return arr[arr.size() - 1].depth()
+
+## () -> int
+##
+## Starts from 1, where a value of 1 indicates that this node has no children.
+func size() -> int:
+    return get_traverse().size()
+
+## () -> int
+##
+## How balanced the binary tree is, in the range of (0, 1].
+## To be precise, this is measured as sqrt(size() / (2^max_depth() - 1)).
+func balanceness() -> float:
+    return sqrt(size() as float / (pow(2, max_depth()) - 1))
+
+
+## (T) -> CometBinaryTree<T>
+##
+## Add the node, treating the binary tree as a binary search tree.
+func add_as_bst(value: Variant, from: CometBinaryTree = self) -> CometBinaryTree:
+    if _comp_fn.call(value, from._v):
+        if from._l:
+            add_as_bst(value, from._l)
+        else:
+            var new_node: CometBinaryTree = CometBinaryTree.new(value)
+            from.mut_l(new_node)
+            return new_node
+    else:
+        if from._r:
+            add_as_bst(value, from._r)
+        else:
+            var new_node: CometBinaryTree = CometBinaryTree.new(value)
+            from.mut_r(new_node)
+            return new_node
+    push_error("Unreachable code!")
+    assert(false, "Unreachable code!")
+    return CometBinaryTree.new(null)
+
+## () -> bool
+##
+## Check if the binary tree is a binary search tree.
+func is_bst(from: CometBinaryTree = self) -> bool:
+    var b: bool = true
+    if from._l:
+        if _comp_fn.call(from._l, from._v):
+            b = is_bst(from._l)
+            if not b: return false
+        else: return false
+    if from._r:
+        if not _comp_fn.call(from._r, from._v):
+            b = is_bst(from._r)
+            if not b: return false
+        else: return false
+    return true
+
+## () -> CometBinaryTree<T>
+##
+## Create a reordered CometBinaryTree, treating the binary tree as a binary search tree.
+func reorder_as_bst(from: CometBinaryTree = self, start: int = 0, end: int = INT64_MIN, nodes: Array[CometBinaryTree] = []) -> CometBinaryTree:
+    if nodes.size() <= 0:
+        nodes = get_inord(from)
+    if end == INT64_MIN:
+        end = nodes.size() - 1
+    if start > end: return null
+    var mid: int = floori((start + end) as float / 2.0)
+    var root: CometBinaryTree = CometBinaryTree.new(nodes[mid]._v)
+    root._l = reorder_as_bst(from, start, mid - 1, nodes)
+    root._r = reorder_as_bst(from, mid + 1, end, nodes)
+    return root
+
+
+## (T, TraversalMode?) -> Array<CometBinaryTree<T>>
+##
+## Get an array of nodes that has the same value as the given value.
+func get_nodes_eq_to(equals_to: Variant, traversal_mode: TraversalMode = TraversalMode.INORD) -> Array[CometBinaryTree]:
+    var list: Array[CometBinaryTree] = get_traverse(traversal_mode)
+    list.filter(func(lhs: Variant) -> bool: return _eq_fn.call(lhs, equals_to))
+    return list
+
+## (T, TraversalMode?) -> OptionalType<CometBinaryTree<T>>
+##
+## Get the first node that has the same value as the given value. Equivalent to calling `first_traverse`.
+func get_first_node_eq_to(equals_to: Variant, traversal_mode: TraversalMode = TraversalMode.INORD) -> OptionalType:
+    return first_traverse(equals_to, traversal_mode)
+
+# Traversal Algorithms #
+
+## (T, TraversalMode?) -> OptionalType<CometBinaryTree<T>>
+func first_traverse(to_find: Variant, traversal_mode = TraversalMode.INORD, from: CometBinaryTree = self) -> OptionalType:
+    match traversal_mode:
+        TraversalMode.INORD:
+            return first_inord(to_find, from)
+        TraversalMode.PREORD:
+            return first_preord(to_find, from)
+        TraversalMode.POSTORD:
+            return first_postord(to_find, from)
+        TraversalMode.LEVELORD:
+            return first_levelord(to_find, from)
+        TraversalMode.SURFACE:
+            return first_surface(to_find, from)
+        _:
+            push_error("Unreachable code!")
+            assert(false, "Unreachable code!")
+            return OptionalType.new(null)
+
+## (T) -> OptionalType<CometBinaryTree<T>>
+func first_inord(to_find: Variant, from: CometBinaryTree = self) -> OptionalType:
+    var found := OptionalType.new(null)
+    var stack: Array[CometBinaryTree] = []
+    var current: CometBinaryTree = from
+    while current or stack.size() > 0:
+        while current:
+            stack.push_back(current)
+            current = current._l
+        current = stack.pop_back()
+        if _eq_fn.call(current._v, to_find):
+            found.insert(current)
+            break
+        current = current._r
+    return found
+
+## (T) -> OptionalType<CometBinaryTree<T>>
+func first_preord(to_find: Variant, from: CometBinaryTree = self) -> OptionalType:
+    var found := OptionalType.new(null)
+    var stack: Array[CometBinaryTree] = [from]
+    while stack.size() > 0:
+        var current: CometBinaryTree = stack.pop_back()
+        if _eq_fn.call(current._v, to_find):
+            found.insert(current)
+            break
+        if current._r:
+            stack.push_back(current._r)
+        if current._l:
+            stack.push_back(current._l)
+    return found
+
+## (T) -> OptionalType<CometBinaryTree<T>>
+func first_postord(to_find: Variant, from: CometBinaryTree = self) -> OptionalType:
+    var found := OptionalType.new(null)
+    var stack: Array[CometBinaryTree] = [from]
+    var current: CometBinaryTree = from
+    while true:
+        while current:
+            stack.push_back(current)
+            stack.push_back(current)
+            current = current._l
+        if stack.size() <= 0:
+            return found
+        current = stack.pop_back()
+        if stack.size() > 0 and stack.back() == current:
+            current = current._r
+        else:
+            if _eq_fn.call(current._v, to_find):
+                found.insert(current)
+                break
+            current = null
+    return found
+
+## (T) -> OptionalType<CometBinaryTree<T>>
+func first_levelord(to_find: Variant, from: CometBinaryTree = self) -> OptionalType:
+    var found := OptionalType.new(null)
+    var queue: Array[CometBinaryTree] = [from]
+    while queue.size() > 0:
+        var popped: CometBinaryTree = queue.pop_front()
+        if _eq_fn.call(popped, to_find):
+            found.insert(popped)
+            break
+        if popped._l:
+            queue.push_back(popped._l)
+        if popped._r:
+            queue.push_back(popped._r)
+    return found
+
+## (T) -> OptionalType<CometBinaryTree<T>>
+##
+## Traverse upwards until the first node that has the same value as to_find is found.
+func first_surface(to_find: Variant, from: CometBinaryTree = self) -> OptionalType:
+    var found := OptionalType.new(null)
+    var current: CometBinaryTree = from
+    while current._p.get_ref():
+        var parent: CometBinaryTree = current._p.get_ref()
+        if _eq_fn.call(parent, to_find):
+            found.insert(parent)
+            break
+    return found
+
+
+## (TraversalMode?) -> Array<CometBinaryTree<T>>
+func get_traverse(traversal_mode = TraversalMode.INORD, from: CometBinaryTree = self) -> Array[CometBinaryTree]:
+    match traversal_mode:
+        TraversalMode.INORD:
+            return get_inord(from)
+        TraversalMode.PREORD:
+            return get_preord(from)
+        TraversalMode.POSTORD:
+            return get_postord(from)
+        TraversalMode.LEVELORD:
+            return get_levelord(from)
+        TraversalMode.SURFACE:
+            return get_surface(from)
+        _:
+            push_error("Unreachable code!")
+            assert(false, "Unreachable code!")
+            return []
+
+## () -> Array<CometBinaryTree<T>>
+func get_inord(from: CometBinaryTree = self, stack: Array[CometBinaryTree] = []) -> Array[CometBinaryTree]:
+    if from._l:
+        get_inord(from._l, stack)
+    stack.push_back(from)
+    if from._r:
+        get_inord(from._r, stack)
+    return stack
+
+## () -> Array<CometBinaryTree<T>>
+func get_preord(from: CometBinaryTree = self, stack: Array[CometBinaryTree] = []) -> Array[CometBinaryTree]:
+    stack.push_back(from)
+    if from._l:
+        get_preord(from._l, stack)
+    if from._r:
+        get_preord(from._r, stack)
+    return stack
+
+## () -> Array<CometBinaryTree<T>>
+func get_postord(from: CometBinaryTree = self, stack: Array[CometBinaryTree] = []) -> Array[CometBinaryTree]:
+    if from._l:
+        get_postord(from._l, stack)
+    if from._r:
+        get_postord(from._r, stack)
+    stack.push_back(from)
+    return stack
+
+## () -> Array<CometBinaryTree<T>>
+func get_levelord(from: CometBinaryTree = self) -> Array[CometBinaryTree]:
+    var stack: Array[CometBinaryTree] = [from]
+    var queue: Array[CometBinaryTree] = [from]
+    while queue.size() > 0:
+        var popped: CometBinaryTree = queue.pop_front()
+        if popped._l:
+            stack.push_back(popped._l)
+            queue.push_back(popped._l)
+        if popped._r:
+            stack.push_back(popped._r)
+            queue.push_back(popped._r)
+    return stack
+
+## () -> Array<CometBinaryTree<T>>
+##
+## Traverse upwards until the root node is reached.
+func get_surface(from: CometBinaryTree = self, stack: Array[CometBinaryTree] = []) -> Array[CometBinaryTree]:
+    stack.push_back(from)
+    var parent: CometBinaryTree = from._p.get_ref() ## CometBinaryTree<T>?
+    if parent:
+        get_surface(parent, stack)
+    return stack
+
+# Cleanup Helpers #
+
+## mut () -> void
+##
+## Free this node, *without* explicitly detaching all parent and children nodes from it. Only call this if you really know what you're doing.
+##
+## In essence, this calls `super.free()` *without* `self.detatch_all()`.
+func raw_free() -> void:
+    super.free()
+
+## mut () -> void
+##
+## Explicitly free this and all descendant nodes.
+func free_all() -> void:
+    var nodes: Array[CometBinaryTree] = get_postord()
+    for node in nodes:
+        node.raw_free()
+
+## mut () -> void
+##
+## Explicitly free all descendant nodes, but not `self`.
+func free_descendants() -> void:
+    var nodes: Array[CometBinaryTree] = get_postord()
+    for node in nodes.slice(0, nodes.size() - 1):
+        node.raw_free()
+
+## mut () -> void
+##
+## Call `detatch_all` on this and all descendant nodes. Orphaned nodes will be freed if no variables hold a reference to them.
+func orphan_all() -> void:
+    var nodes: Array[CometBinaryTree] = get_postord()
+    for node in nodes:
+        node.detatch_all()
+
+## mut () -> void
+##
+## Call `detatch_all` all descendant nodes, but not `self`. Orphaned nodes will be freed if no variables hold a reference to them.
+func orphan_descendants() -> void:
+    var nodes: Array[CometBinaryTree] = get_postord()
+    for node in nodes.slice(0, nodes.size() - 1):
+        node.detatch_all()
+
+## mut () -> bool
+##
+## Detaches this node from the parent node.
+func detatch_parent() -> void:
+    var parent: CometBinaryTree = _p.get_ref() ## CometBinaryTree<T>?
+    if parent:
+        if parent._l == self:
+            parent._l = null
+        if parent._r == self:
+            parent._r = null
+        _p = weakref(null)
+
+## mut () -> OptionalType<CometBinaryTree<T>>
+##
+## Detaches this node from the parent node. Returns the parent node.
+func detatch_parent_returning() -> OptionalType:
+    var parent: CometBinaryTree = _p.get_ref() ## CometBinaryTree<T>?
+    if parent:
+        if parent._l == self:
+            parent._l = null
+        if parent._r == self:
+            parent._r = null
+        _p = weakref(null)
+        return OptionalType.new(parent)
+    else:
+        return OptionalType.new(null)
+
+## mut () -> void
+##
+## Detatches all children nodes from this node.
+func detatch_children() -> void:
+    if _l:
+        _l._p = weakref(null)
+        _l = null
+    if _r:
+        _r._p = weakref(null)
+        _r = null
+
+## mut () -> KVPair<OptionalType<CometBinaryTree<T>>, OptionalType<CometBinaryTree<T>>
+##
+## Detatches all children nodes from this node. Returns a KVPair, with the key and value corresponding to left and right child nodes.
+func detatch_children_returning() -> KVPair:
+    var kv: KVPair = KVPair.new(OptionalType.new(null), OptionalType.new(null))
+    if _l:
+        kv._key.insert(_l)
+        _l._p = weakref(null)
+        _l = null
+    if _r:
+        kv._value.insert(_r)
+        _r._p = weakref(null)
+        _r = null
+    return kv
+
+## mut () -> void
+##
+## Calls `self.detatch_parent()` and `self.detatch_children()`, orphaning this node.
+func detatch_all() -> void:
+    detatch_parent()
+    detatch_children()

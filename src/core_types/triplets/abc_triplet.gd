@@ -40,3 +40,21 @@ func mut_c(new_c: Variant) -> Variant:
     var temp: Variant = _c
     _c = new_c
     return temp
+
+## mut (Func(T) -> T) -> T
+func call_a(to_call: Callable) -> Variant:
+    var temp: Variant = _a
+    _a = to_call.call(_a)
+    return temp
+
+## mut (Func(U) -> U) -> U
+func call_b(to_call: Callable) -> Variant:
+    var temp: Variant = _b
+    _b = to_call.call(_b)
+    return temp
+
+## mut (Func(V) -> V) -> V
+func call_c(to_call: Callable) -> Variant:
+    var temp: Variant = _c
+    _c = to_call.call(_c)
+    return temp

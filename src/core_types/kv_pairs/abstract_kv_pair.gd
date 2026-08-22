@@ -17,3 +17,7 @@ extends Resource
 ##
 ## mut_v: mut (U) -> U
 ##
+## call_k: mut (Func(T) -> T) -> T
+##
+## call_v: mut (Func(U) -> U) -> U
+##
