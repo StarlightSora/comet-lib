@@ -19,6 +19,13 @@ enum TraversalMode {
     SURFACE,
 }
 
+enum AsBSTBalancingMode {
+    NOT_BST,
+    USE_DEEPER,
+    ALWAYS_PRE,
+    ALWAYS_SUC,
+}
+
 static func _default_comp_fn(lhs: Variant, rhs: Variant) -> bool: return lhs < rhs
 static func _default_eq_fn(lhs: Variant, rhs: Variant) -> bool: return lhs == rhs
 
@@ -240,6 +247,8 @@ func balanceness() -> float:
 ## (T) -> CometBinaryTree<T>
 ##
 ## Add a node with the given value, treating the binary tree as a binary search tree.
+##
+## Uses `comp_fn`.
 func add_as_bst(value: Variant, from: CometBinaryTree = self) -> CometBinaryTree:
     if _comp_fn.call(value, from._v):
         if from._l:
@@ -262,6 +271,8 @@ func add_as_bst(value: Variant, from: CometBinaryTree = self) -> CometBinaryTree
 ## () -> bool
 ##
 ## Check if the binary tree is a binary search tree.
+##
+## Uses `comp_fn`.
 func is_bst(from: CometBinaryTree = self) -> bool:
     var b: bool = true
     if from._l:
@@ -295,6 +306,8 @@ func reorder_as_bst(from: CometBinaryTree = self, start: int = 0, end: int = INT
 ## (T, TraversalMode?) -> Array<CometBinaryTree<T>>
 ##
 ## Get an array of nodes that has the same value as the given value.
+##
+## Uses `eq_fn`.
 func get_nodes_eq_to(equals_to: Variant, traversal_mode: TraversalMode = TraversalMode.INORD) -> Array[CometBinaryTree]:
     var list: Array[CometBinaryTree] = get_traverse(traversal_mode)
     list.filter(func(lhs: Variant) -> bool: return _eq_fn.call(lhs, equals_to))
@@ -303,6 +316,8 @@ func get_nodes_eq_to(equals_to: Variant, traversal_mode: TraversalMode = Travers
 ## (T, TraversalMode?) -> OptionalType<CometBinaryTree<T>>
 ##
 ## Get the first node that has the same value as the given value. Equivalent to calling `first_traverse`.
+##
+## Uses `eq_fn`.
 func get_first_node_eq_to(equals_to: Variant, traversal_mode: TraversalMode = TraversalMode.INORD) -> OptionalType:
     return first_traverse(equals_to, traversal_mode)
 
@@ -310,27 +325,25 @@ func get_first_node_eq_to(equals_to: Variant, traversal_mode: TraversalMode = Tr
 ##
 ## Get the first node that has the same value as the given value, treating the binary tree as a binary search tree.
 ## This is faster than using `get_first_node_eq_to` if you know that this is a binary search tree.
+##
+## Uses `comp_fn` and `eq_fn`.
 func get_first_node_eq_to_as_bst(equals_to: Variant) -> OptionalType:
     var current: CometBinaryTree = self
-    while true:
+    while current:
         if _eq_fn.call(current._v, equals_to):
             return OptionalType.new(current)
         else:
             if _comp_fn.call(equals_to, current._v):
-                if current._l:
-                    current = current._l
-                else:
-                    break
+                current = current._l
             else:
-                if current._r:
-                    current = current._r
-                else:
-                    break
+                current = current._r
     return OptionalType.new(null)
 
 # Traversal Algorithms #
 
 ## (T, TraversalMode?) -> OptionalType<CometBinaryTree<T>>
+##
+## Uses `eq_fn`.
 func first_traverse(to_find: Variant, traversal_mode = TraversalMode.INORD, from: CometBinaryTree = self) -> OptionalType:
     match traversal_mode:
         TraversalMode.INORD:
@@ -349,6 +362,8 @@ func first_traverse(to_find: Variant, traversal_mode = TraversalMode.INORD, from
             return OptionalType.new(null)
 
 ## (T) -> OptionalType<CometBinaryTree<T>>
+##
+## Uses `eq_fn`.
 func first_inord(to_find: Variant, from: CometBinaryTree = self) -> OptionalType:
     var found := OptionalType.new(null)
     var stack: Array[CometBinaryTree] = []
@@ -365,6 +380,8 @@ func first_inord(to_find: Variant, from: CometBinaryTree = self) -> OptionalType
     return found
 
 ## (T) -> OptionalType<CometBinaryTree<T>>
+##
+## Uses `eq_fn`.
 func first_preord(to_find: Variant, from: CometBinaryTree = self) -> OptionalType:
     var found := OptionalType.new(null)
     var stack: Array[CometBinaryTree] = [from]
@@ -380,6 +397,8 @@ func first_preord(to_find: Variant, from: CometBinaryTree = self) -> OptionalTyp
     return found
 
 ## (T) -> OptionalType<CometBinaryTree<T>>
+##
+## Uses `eq_fn`.
 func first_postord(to_find: Variant, from: CometBinaryTree = self) -> OptionalType:
     var found := OptionalType.new(null)
     var stack: Array[CometBinaryTree] = [from]
@@ -402,6 +421,8 @@ func first_postord(to_find: Variant, from: CometBinaryTree = self) -> OptionalTy
     return found
 
 ## (T) -> OptionalType<CometBinaryTree<T>>
+##
+## Uses `eq_fn`.
 func first_levelord(to_find: Variant, from: CometBinaryTree = self) -> OptionalType:
     var found := OptionalType.new(null)
     var queue: Array[CometBinaryTree] = [from]
@@ -419,6 +440,8 @@ func first_levelord(to_find: Variant, from: CometBinaryTree = self) -> OptionalT
 ## (T) -> OptionalType<CometBinaryTree<T>>
 ##
 ## Traverse upwards until the first node that has the same value as to_find is found.
+##
+## Uses `eq_fn`.
 func first_surface(to_find: Variant, from: CometBinaryTree = self) -> OptionalType:
     var found := OptionalType.new(null)
     var current: CometBinaryTree = from
@@ -500,7 +523,129 @@ func get_surface(from: CometBinaryTree = self, stack: Array[CometBinaryTree] = [
         get_surface(parent, stack)
     return stack
 
+## () -> CometBinaryTree<T>
+func get_inord_suc_as_bst() -> CometBinaryTree:
+    var cur: CometBinaryTree = self
+    if cur._r:
+        cur = cur._r
+    else:
+        return self
+    while cur._l:
+        cur = cur._l
+    return cur
+
+## () -> CometBinaryTree<T>
+func get_inord_pre_as_bst() -> CometBinaryTree:
+    var cur: CometBinaryTree = self
+    if cur._l:
+        cur = cur._l
+    else:
+        return self
+    while cur._r:
+        cur = cur._r
+    return cur
+
+
 # Cleanup Helpers #
+
+## mut (bool?, bool?) -> KVPair<CometBinaryTree?, OptionalType<CometBinaryTree>>
+##
+## Remove this node from the binary tree. Parent and children nodes will be re-attached accordingly.
+##
+## If `then_free`, then the key of the returned pair will **always** be `null` because `self` will explicitly be freed.
+## Otherwise it will **always** be `self`, after it is orphaned. This is enabled by default.
+##
+## The value of the returned pair is whatever node that took over the spot of the old node, if any.
+##
+## Pass something other than `NOT_BST` to `as_bst` to treat this as a binary search tree for this operation.
+## This is disabled by default. This only makes a difference if the current node has children on both sides.
+## `USE_DEEPER` will use the node with a deeper depth to replace the current node. The rest are self-explanetory.
+##
+## NOTE: If this operation is done on the root node, then the variable that holds the root node
+## needs to be re-set to the value of the returned pair, otherwise the reference to the entire binary tree will be lost!
+##
+func remove(then_free: bool = true, as_bst: AsBSTBalancingMode = AsBSTBalancingMode.NOT_BST) -> KVPair:
+    var fin: Callable = func() -> CometBinaryTree:
+        if then_free:
+            raw_free()
+            return null
+        else:
+            _l = null
+            _r = null
+            _p = weakref(null)
+            return self
+    if is_leaf():
+        var side: ChildSide = child_side()
+        var parent: CometBinaryTree = _p.get_ref()
+        match side:
+            ChildSide.LEFT:
+                assert(parent, "Parent should exist!")
+                parent._l = null
+            ChildSide.RIGHT:
+                assert(parent, "Parent should exist!")
+                parent._r = null
+        return KVPair.new(fin.call(), OptionalType.new(null))
+    elif _l and _r:
+        var side: ChildSide = child_side()
+        var parent: CometBinaryTree = _p.get_ref()
+        var to_use: CometBinaryTree = null
+        if as_bst != AsBSTBalancingMode.NOT_BST:
+            match as_bst:
+                AsBSTBalancingMode.ALWAYS_PRE:
+                    to_use = get_inord_pre_as_bst()
+                AsBSTBalancingMode.ALWAYS_SUC:
+                    to_use = get_inord_suc_as_bst()
+                AsBSTBalancingMode.USE_DEEPER:
+                    var pre: CometBinaryTree = get_inord_pre_as_bst()
+                    var suc: CometBinaryTree = get_inord_suc_as_bst()
+                    to_use = pre if pre.depth() > suc.depth() else suc
+                _:
+                    push_error("Unreachable code!")
+                    assert(false, "Unreachable code!")
+        else:
+            to_use = _r
+        match side:
+            ChildSide.LEFT:
+                assert(parent, "Parent should exist!")
+                to_use._p = weakref(parent)
+                parent._l = to_use
+            ChildSide.RIGHT:
+                assert(parent, "Parent should exist!")
+                to_use._p = weakref(parent)
+                parent._r = to_use
+            _:
+                to_use._p = weakref(null)
+        
+        _l._p = weakref(to_use)
+        _r._p = weakref(to_use)
+        to_use._l = _l if _l != to_use else null
+        to_use._r = _r if _r != to_use else null
+        return KVPair.new(fin.call(), OptionalType.new(to_use))
+    else:
+        var side: ChildSide = child_side()
+        var parent: CometBinaryTree = _p.get_ref()
+        var old: CometBinaryTree = null
+        if _l:
+            old = _l
+            match side:
+                ChildSide.LEFT:
+                    assert(parent, "Parent should exist!")
+                    parent._l = _l
+                ChildSide.RIGHT:
+                    assert(parent, "Parent should exist!")
+                    parent._r = _l
+            _l._p = _p
+        elif _r:
+            old = _r
+            match side:
+                ChildSide.LEFT:
+                    assert(parent, "Parent should exist!")
+                    parent._l = _r
+                ChildSide.RIGHT:
+                    assert(parent, "Parent should exist!")
+                    parent._r = _r
+            _r._p = _p
+        return KVPair.new(fin.call(), OptionalType.new(old))
 
 ## mut () -> void
 ##
