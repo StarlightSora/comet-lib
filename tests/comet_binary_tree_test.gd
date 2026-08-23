@@ -3,7 +3,39 @@ extends Node3D
 @export var data: Dictionary[String, CometBinaryTree] = {}
 
 func _ready() -> void:
-	test_b()
+	test_c()
+
+func test_c() -> void:
+	print("Scope start")
+	if true:
+		var rand := RandomNumberGenerator.new()
+		var root := CometBinaryTree.new(Vector2i(256, 256))
+		root.mut_split_fn(func(input: Vector2i, split_ratio: float) -> ABCTriplet:
+			print("Did a split here")
+			if input.x > input.y:
+				var split_pos: int = roundi(input.x * (1.0 - split_ratio))
+				return ABCTriplet.new(Vector2i(split_pos, input.y), Vector2i(input.x - split_pos, input.y), input)
+			else:
+				var split_pos: int = roundi(input.y * (1.0 - split_ratio))
+				return ABCTriplet.new(Vector2i(input.x, split_pos), Vector2i(input.x, input.y - split_pos), input)
+		)
+		var do_recursive_split: Callable
+		do_recursive_split = func(as_closure: Callable, on_behalf_of: CometBinaryTree, recursions_left: int) -> void:
+			if recursions_left <= 0: return
+			on_behalf_of.split(rand.randf_range(0.2, 0.8))
+			as_closure.call(as_closure, on_behalf_of.l().unwrap(), recursions_left - 1)
+			as_closure.call(as_closure, on_behalf_of.r().unwrap(), recursions_left - 1)
+		do_recursive_split.call(do_recursive_split, root, 4)
+		print("Trying visualization in inner scope...")
+		if true:
+			var preord := root.get_preord()
+			for entry in preord:
+				var depth_base_zero := entry.depth() - 1
+				print("-".repeat(depth_base_zero) + ": " + str(entry.v()))
+		print("Inner scope end")
+	print("Scope end")
+	await CometSingleton.wait(1)
+	print("Test end")
 
 func test_b() -> void:
 	print("Scope start")
@@ -52,6 +84,14 @@ func test_b() -> void:
 		print("Pre-order: ", root.get_preord().map(func(n): return n.v()))
 		print("Post-order: ", root.get_postord().map(func(n): return n.v()))
 		print("Level-order: ", root.get_levelord().map(func(n): return n.v()))
+		
+		print("Trying visualization in inner scope...")
+		if true:
+			var preord := root.get_preord()
+			for entry in preord:
+				var depth_base_zero := entry.depth() - 1
+				print("-".repeat(depth_base_zero) + ": " + str(entry.v()))
+		print("Inner scope end")
 	print("Scope end")
 	await CometSingleton.wait(1)
 	print("Test end")

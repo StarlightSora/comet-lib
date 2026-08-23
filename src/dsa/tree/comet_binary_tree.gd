@@ -183,11 +183,13 @@ func has_l() -> bool:
 func l() -> OptionalType:
 	return OptionalType.new(_l)
 
-## mut (CometBinaryTree<T>?, LinkAndOrphanMode?) -> void
+## mut (CometBinaryTree<T>?, LinkAndOrphanMode?, bool?) -> void
 ##
 ## Sets the left child of this node.
 ## By default, the children of the old left child will relinked to the new left child then be shallow-orphaned.
-func mut_l(new_l: CometBinaryTree, then_orphan_old: LinkAndOrphanMode = LinkAndOrphanMode.RELINK_THEN_SHALLOW) -> void:
+##
+## `inherit_closures` controls if the newly set node will use the same closures that this node has. Defaults to true.
+func mut_l(new_l: CometBinaryTree, then_orphan_old: LinkAndOrphanMode = LinkAndOrphanMode.RELINK_THEN_SHALLOW, inherit_closures: bool = true) -> void:
 	if _l:
 		if new_l and (then_orphan_old == LinkAndOrphanMode.RELINK_THEN_SHALLOW or then_orphan_old == LinkAndOrphanMode.RELINK_THEN_NONE):
 			new_l._l = _l._l
@@ -202,15 +204,21 @@ func mut_l(new_l: CometBinaryTree, then_orphan_old: LinkAndOrphanMode = LinkAndO
 			_l.orphan_all()
 		elif then_orphan_old == LinkAndOrphanMode.DIRECT_THEN_SHALLOW or then_orphan_old == LinkAndOrphanMode.RELINK_THEN_SHALLOW:
 			_l.detatch_all()
+	if new_l and inherit_closures:
+		new_l._comp_fn = _comp_fn
+		new_l._eq_fn = _eq_fn
+		new_l._split_fn = _split_fn
 	_l = new_l
 	if _l:
 		_l._p = weakref(self)
 
-## mut (CometBinaryTree<T>?, LinkMode?) -> OptionalType<CometBinaryTree<T>>
+## mut (CometBinaryTree<T>?, LinkMode?, bool?) -> OptionalType<CometBinaryTree<T>>
 ##
 ## Sets the left child of this node. Returns the old left child.
 ## By default, the children of the old left child will be relinked to the new left child.
-func mut_l_returning(new_l: CometBinaryTree, then_: LinkMode = LinkMode.RELINK) -> OptionalType:
+##
+## `inherit_closures` controls if the newly set node will use the same closures that this node has. Defaults to true.
+func mut_l_returning(new_l: CometBinaryTree, then_: LinkMode = LinkMode.RELINK, inherit_closures: bool = true) -> OptionalType:
 	var temp: CometBinaryTree = null
 	if _l:
 		temp = _l
@@ -223,6 +231,10 @@ func mut_l_returning(new_l: CometBinaryTree, then_: LinkMode = LinkMode.RELINK) 
 		if new_l and then_ == LinkMode.RELINK:
 			_l._l = null
 			_l._r = null
+	if new_l and inherit_closures:
+		new_l._comp_fn = _comp_fn
+		new_l._eq_fn = _eq_fn
+		new_l._split_fn = _split_fn
 	_l = new_l
 	if _l:
 		_l._p = weakref(self)
@@ -243,7 +255,9 @@ func r() -> OptionalType:
 ##
 ## Sets the right child of this node.
 ## By default, the children of the old right child will relinked to the new right child then be shallow-orphaned.
-func mut_r(new_r: CometBinaryTree, then_orphan_old: LinkAndOrphanMode = LinkAndOrphanMode.RELINK_THEN_SHALLOW) -> void:
+##
+## `inherit_closures` controls if the newly set node will use the same closures that this node has. Defaults to true.
+func mut_r(new_r: CometBinaryTree, then_orphan_old: LinkAndOrphanMode = LinkAndOrphanMode.RELINK_THEN_SHALLOW, inherit_closures: bool = true) -> void:
 	if _r:
 		if new_r and (then_orphan_old == LinkAndOrphanMode.RELINK_THEN_SHALLOW or then_orphan_old == LinkAndOrphanMode.RELINK_THEN_NONE):
 			new_r._l = _r._l
@@ -258,6 +272,10 @@ func mut_r(new_r: CometBinaryTree, then_orphan_old: LinkAndOrphanMode = LinkAndO
 			_r.orphan_all()
 		elif then_orphan_old == LinkAndOrphanMode.DIRECT_THEN_SHALLOW or then_orphan_old == LinkAndOrphanMode.RELINK_THEN_SHALLOW:
 			_r.detatch_all()
+	if new_r and inherit_closures:
+		new_r._comp_fn = _comp_fn
+		new_r._eq_fn = _eq_fn
+		new_r._split_fn = _split_fn
 	_r = new_r
 	if _r:
 		_r._p = weakref(self)
@@ -266,7 +284,9 @@ func mut_r(new_r: CometBinaryTree, then_orphan_old: LinkAndOrphanMode = LinkAndO
 ##
 ## Sets the right child of this node. Returns the old right child.
 ## By default, the children of the old right child will be relinked to the new right child.
-func mut_r_returning(new_r: CometBinaryTree, then_: LinkMode = LinkMode.RELINK) -> OptionalType:
+##
+## `inherit_closures` controls if the newly set node will use the same closures that this node has. Defaults to true.
+func mut_r_returning(new_r: CometBinaryTree, then_: LinkMode = LinkMode.RELINK, inherit_closures: bool = true) -> OptionalType:
 	var temp: CometBinaryTree = null
 	if _r:
 		temp = _r
@@ -279,6 +299,10 @@ func mut_r_returning(new_r: CometBinaryTree, then_: LinkMode = LinkMode.RELINK) 
 			_r._l = null
 			_r._r = null
 		_r.detatch_parent()
+	if new_r and inherit_closures:
+		new_r._comp_fn = _comp_fn
+		new_r._eq_fn = _eq_fn
+		new_r._split_fn = _split_fn
 	_r = new_r
 	if _r:
 		_r._p = weakref(self)
@@ -329,7 +353,7 @@ func balanceness() -> float:
 	return sqrt(size() as float / (pow(2, max_depth()) - 1.0))
 
 
-## mut (T, bool?) -> ResultType<CometBinaryTree<T>, CometBinaryTree<T>>
+## mut (T, bool?, bool?) -> ResultType<CometBinaryTree<T>, CometBinaryTree<T>>
 ##
 ## Add a node with the given value, treating the binary tree as a binary search tree. 
 ##
@@ -340,7 +364,7 @@ func balanceness() -> float:
 ## This is typically a practical no-op, unless you need to overwrite the reference value inside the node. 
 ##
 ## Uses `comp_fn` and `eq_fn`.
-func add_as_bst(value: Variant, overwrite_for_same: bool = false, from: CometBinaryTree = self) -> ResultType:
+func add_as_bst(value: Variant, overwrite_for_same: bool = false, inherit_closures: bool = true, from: CometBinaryTree = self) -> ResultType:
 	var already: OptionalType = get_first_node_eq_to_as_bst(value)
 	if already.is_some():
 		if overwrite_for_same:
@@ -348,17 +372,17 @@ func add_as_bst(value: Variant, overwrite_for_same: bool = false, from: CometBin
 		return ResultType.new(false, already.unwrap())
 	if _comp_fn.call(value, from._v):
 		if from._l:
-			return add_as_bst(value, overwrite_for_same, from._l)
+			return add_as_bst(value, overwrite_for_same, inherit_closures, from._l)
 		else:
 			var new_node: CometBinaryTree = CometBinaryTree.new(value)
-			from.mut_l(new_node)
+			from.mut_l(new_node, LinkAndOrphanMode.RELINK_THEN_SHALLOW, inherit_closures)
 			return ResultType.new(true, new_node)
 	else:
 		if from._r:
-			return add_as_bst(value, overwrite_for_same, from._r)
+			return add_as_bst(value, overwrite_for_same, inherit_closures, from._r)
 		else:
 			var new_node: CometBinaryTree = CometBinaryTree.new(value)
-			from.mut_r(new_node)
+			from.mut_r(new_node, LinkAndOrphanMode.RELINK_THEN_SHALLOW, inherit_closures)
 			return ResultType.new(true, new_node)
 
 ## () -> bool
@@ -377,7 +401,7 @@ func is_bst(from: CometBinaryTree = self) -> bool:
 		else: return false
 	return true
 
-## () -> CometBinaryTree<T>
+## mut () -> CometBinaryTree<T>
 ##
 ## Create a reordered CometBinaryTree, treating the binary tree as a binary search tree.
 func reorder_as_bst(from: CometBinaryTree = self, start: int = 0, end: int = INT64_MIN, nodes: Array[CometBinaryTree] = []) -> CometBinaryTree:
@@ -438,13 +462,13 @@ func get_first_node_eq_to_as_bst(equals_to: Variant) -> OptionalType:
 ## If this is a leaf node, both the left and right sides will have new nodes assigned with the values split accordingly.
 ## If one side of the node is occupied, then the vacant side will get a new node assigned, with the same value as the current node.
 ## No-op if both sides are occupied.
-func split(split_ratio: Variant = 0.5, deep_subresources_mode = DeepDuplicateMode.DEEP_DUPLICATE_INTERNAL) -> SplitResult:
+func split(split_ratio: Variant = 0.5, deep_subresources_mode = DeepDuplicateMode.DEEP_DUPLICATE_INTERNAL, inherit_closures: bool = true) -> SplitResult:
 	if is_leaf():
 		var result: ABCTriplet = _split_fn.call(self._v, split_ratio)
 		var new_l = CometBinaryTree.new(result.a())
 		var new_r = CometBinaryTree.new(result.b())
-		mut_l(new_l, CometBinaryTree.LinkAndOrphanMode.DIRECT_THEN_DEEP)
-		mut_r(new_r, CometBinaryTree.LinkAndOrphanMode.DIRECT_THEN_DEEP)
+		mut_l(new_l, CometBinaryTree.LinkAndOrphanMode.DIRECT_THEN_DEEP, inherit_closures)
+		mut_r(new_r, CometBinaryTree.LinkAndOrphanMode.DIRECT_THEN_DEEP, inherit_closures)
 		_v = result.c()
 		return SplitResult.SPLIT_TO_BOTH
 	elif _l and _r:
@@ -456,12 +480,12 @@ func split(split_ratio: Variant = 0.5, deep_subresources_mode = DeepDuplicateMod
 			clo = _v.duplicate_deep(deep_subresources_mode)
 		if _l:
 			var new_r = CometBinaryTree.new(clo)
-			mut_r(new_r, CometBinaryTree.LinkAndOrphanMode.DIRECT_THEN_DEEP)
+			mut_r(new_r, CometBinaryTree.LinkAndOrphanMode.DIRECT_THEN_DEEP, inherit_closures)
 			_v = result.c()
 			return SplitResult.SPLIT_TO_RIGHT
 		elif _r:
 			var new_l = CometBinaryTree.new(clo)
-			mut_l(new_l, CometBinaryTree.LinkAndOrphanMode.DIRECT_THEN_DEEP)
+			mut_l(new_l, CometBinaryTree.LinkAndOrphanMode.DIRECT_THEN_DEEP, inherit_closures)
 			_v = result.c()
 			return SplitResult.SPLIT_TO_LEFT
 		else:
