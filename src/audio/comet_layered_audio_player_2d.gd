@@ -1,5 +1,5 @@
-class_name CometLayeredAudioPlayer
-extends Node
+class_name CometLayeredAudioPlayer2D
+extends Node2D
 
 var _cached_children: Array[CometAudioInstCache] = []
 
