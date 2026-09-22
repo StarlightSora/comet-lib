@@ -21,9 +21,7 @@ static func play_audio(cached_children: Array[CometAudioInstCache]) -> void:
 			continue
 		cached_children.remove_at(pos)
 
-## static (mut Array<CometAudioInstCache>, T) -> bool
-## where T: extends CometAudioStreamPlayer or CometAudioStreamPlayer2D or CometAudioStreamPlayer3D
-## or AudioStreamPlayer or AudioStreamPlayer2D or AudioStreamPlayer3D
+## static (mut Array<CometAudioInstCache>, CometAudioPlayable) -> bool
 static func register(cached_children: Array[CometAudioInstCache], node: Node) -> bool:
 	if is_registered(cached_children, node):
 		return false
@@ -33,9 +31,7 @@ static func register(cached_children: Array[CometAudioInstCache], node: Node) ->
 		return true
 	else: return false
 
-## static (mut Array<CometAudioInstCache>, T) -> bool
-## where T: extends CometAudioStreamPlayer or CometAudioStreamPlayer2D or CometAudioStreamPlayer3D
-## or AudioStreamPlayer or AudioStreamPlayer2D or AudioStreamPlayer3D
+## static (mut Array<CometAudioInstCache>, CometAudioPlayable) -> bool
 static func unregister(cached_children: Array[CometAudioInstCache], node: Node) -> bool:
 	var u := cached_children.find(node)
 	if u:
@@ -43,8 +39,7 @@ static func unregister(cached_children: Array[CometAudioInstCache], node: Node) 
 		return true
 	else: return false
 
-## static (Array<CometAudioInstCache>, T) -> bool
-## where T: extends CometAudioStreamPlayer or AudioStreamPlayer
+## static (Array<CometAudioInstCache>, CometAudioPlayable) -> bool
 static func is_registered(cached_children: Array[CometAudioInstCache], node: Node) -> bool:
 	var a = cached_children.find(node)
 	if a >= 0:

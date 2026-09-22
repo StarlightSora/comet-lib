@@ -1,5 +1,5 @@
-class_name CometLayeredAudioPlayer3D
-extends Node3D
+class_name CometLayeredAudioPlayer2D
+extends Node2D
 
 var _cached_children: Array[CometAudioInstCache] = []
 
@@ -7,18 +7,15 @@ var _cached_children: Array[CometAudioInstCache] = []
 func play_audio() -> void:
 	return ICometLayeredAudioPlayer.play_audio(_cached_children)
 
-## mut (T) -> bool
-## where T: extends CometAudioStreamPlayer or AudioStreamPlayer
+## mut (CometAudioPlayable) -> bool
 func register(node: Node) -> bool:
 	return ICometLayeredAudioPlayer.register(_cached_children, node)
 
-## mut (T) -> bool
-## where T: extends CometAudioStreamPlayer or AudioStreamPlayer
+## mut (CometAudioPlayable) -> bool
 func unregister(node: Node) -> bool:
 	return ICometLayeredAudioPlayer.unregister(_cached_children, node)
 
-## (T) -> bool
-## where T: extends CometAudioStreamPlayer or AudioStreamPlayer
+## (CometAudioPlayable) -> bool
 func is_registered(node: Node) -> bool:
 	return ICometLayeredAudioPlayer.is_registered(_cached_children, node)
 

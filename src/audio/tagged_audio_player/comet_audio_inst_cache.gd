@@ -16,15 +16,11 @@ func play_audio() -> bool:
 		inst.play()
 	return true
 
-## () -> T?
-## where T: extends CometAudioStreamPlayer or CometAudioStreamPlayer2D or CometAudioStreamPlayer3D
-## or AudioStreamPlayer or AudioStreamPlayer2D or AudioStreamPlayer3D
+## () -> CometAudioPlayable?
 func try_into() -> Node:
 	return _inst_weak.get_ref()
 
-## static (T) -> Self
-## where T: extends CometAudioStreamPlayer or CometAudioStreamPlayer2D or CometAudioStreamPlayer3D
-## or AudioStreamPlayer or AudioStreamPlayer2D or AudioStreamPlayer3D
+## static (CometAudioPlayable) -> Self
 static func make(from: Node) -> CometAudioInstCache:
 	if (from is AudioStreamPlayer) or (from is AudioStreamPlayer2D) or (from is AudioStreamPlayer3D):
 		var a := CometAudioInstCache.new()
