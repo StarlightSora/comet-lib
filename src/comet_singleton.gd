@@ -32,23 +32,23 @@ static func mut_g_returning(entry: Variant, value: Variant) -> OptionalType:
 
 ## () -> float
 ##
-## How much game time passed. This is tied to `_process`.
+## How much game time passed. This is tied to `Node._process`.
 ## This works in respect to `Engine.time_scale`.
 func get_elapsed_game_time() -> float:
 	return _elapsed_game_time
 
 ## () -> float
 ##
-## How much physics time passed. This is tied to `_physics_process`.
+## How much physics time passed. This is tied to `Node._physics_process`.
 ## This works in respect to `Engine.time_scale`.
 func get_elapsed_physics_time() -> float:
 	return _elapsed_physics_time
 
-## () -> float
+## static () -> float
 ##
 ## How much engine time passed. This is tied to `Time.get_ticks_usec`.
 ## `Engine.time_scale` does not affect this.
-func get_elapsed_engine_time() -> float:
+static func get_elapsed_engine_time() -> float:
 	return Time.get_ticks_usec() / 1000.0 / 1000.0
 
 ## async (float, bool?) -> void
