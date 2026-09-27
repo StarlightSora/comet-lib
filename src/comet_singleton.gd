@@ -7,6 +7,9 @@ extends Node
 ## Dictionary<Any, Any>
 static var _g: Dictionary[Variant, Variant]
 
+var _elapsed_game_time: float = 0.0
+var _elapsed_physics_time: float = 0.0
+
 ## static (Any) -> OptionalType<Any>
 ##
 ## Read from the global space registry.
@@ -26,6 +29,27 @@ static func mut_g_returning(entry: Variant, value: Variant) -> OptionalType:
 	var temp := OptionalType.new(_g.get(entry))
 	_g.set(entry, value)
 	return temp
+
+## () -> float
+##
+## How much game time passed. This is tied to `_process`.
+## This works in respect to `Engine.time_scale`.
+func get_elapsed_game_time() -> float:
+	return _elapsed_game_time
+
+## () -> float
+##
+## How much physics time passed. This is tied to `_physics_process`.
+## This works in respect to `Engine.time_scale`.
+func get_elapsed_physics_time() -> float:
+	return _elapsed_physics_time
+
+## () -> float
+##
+## How much engine time passed. This is tied to `Time.get_ticks_usec`.
+## `Engine.time_scale` does not affect this.
+func get_elapsed_engine_time() -> float:
+	return Time.get_ticks_usec() / 1000.0 / 1000.0
 
 ## async (float, bool?) -> void
 ##
@@ -56,3 +80,9 @@ func wait_real_returning(how_long: float, in_physics_process: bool = false) -> f
 	await get_tree().create_timer(how_long, true, in_physics_process, true).timeout
 	return (Time.get_ticks_usec() - start) as float / 1000.0 / 1000.0
 
+
+func _process(delta: float) -> void:
+	_elapsed_game_time += delta
+
+func _physics_process(delta: float) -> void:
+	_elapsed_physics_time += delta
