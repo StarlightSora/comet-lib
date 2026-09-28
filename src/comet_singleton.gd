@@ -10,22 +10,22 @@ static var _g: Dictionary[Variant, Variant]
 var _elapsed_game_time: float = 0.0
 var _elapsed_physics_time: float = 0.0
 
-## static (Any) -> OptionalType<Any>
+## (Any) -> OptionalType<Any>
 ##
 ## Read from the global space registry.
-static func g(entry: Variant) -> OptionalType:
+func g(entry: Variant) -> OptionalType:
 	return OptionalType.new(_g.get(entry))
 
-## static (Any, Any) -> void
+## (Any, Any) -> void
 ##
 ## Write to the global space registry.
-static func mut_g(entry: Variant, value: Variant) -> void:
+func mut_g(entry: Variant, value: Variant) -> void:
 	_g.set(entry, value)
 
-## static (Any, Any) -> OptionalType<Any>
+## (Any, Any) -> OptionalType<Any>
 ##
 ## Write to the global space registry. The old value will be returned in an OptionalType.
-static func mut_g_returning(entry: Variant, value: Variant) -> OptionalType:
+func mut_g_returning(entry: Variant, value: Variant) -> OptionalType:
 	var temp := OptionalType.new(_g.get(entry))
 	_g.set(entry, value)
 	return temp
@@ -44,11 +44,11 @@ func get_elapsed_game_time() -> float:
 func get_elapsed_physics_time() -> float:
 	return _elapsed_physics_time
 
-## static () -> float
+## () -> float
 ##
 ## How much engine time passed. This is tied to `Time.get_ticks_usec`.
 ## `Engine.time_scale` does not affect this.
-static func get_elapsed_engine_time() -> float:
+func get_elapsed_engine_time() -> float:
 	return Time.get_ticks_usec() / 1000.0 / 1000.0
 
 ## async (float, bool?) -> void
@@ -80,11 +80,11 @@ func wait_real_returning(how_long: float, in_physics_process: bool = false) -> f
 	await get_tree().create_timer(how_long, true, in_physics_process, true).timeout
 	return (Time.get_ticks_usec() - start) as float / 1000.0 / 1000.0
 
-## static async (Func() -> Any?) -> Any?
+## async (Func() -> Any?) -> Any?
 ##
 ## Calls a callable in async, letting downstream code keep executing (unless await is used at the call site).
 ## If the callable needs to accept arguments, they should be first bound via Callable.bindv. 
-static func spawn(closure: Callable) -> Variant:
+func spawn(closure: Callable) -> Variant:
 	return await closure.call()
 
 func _process(delta: float) -> void:
