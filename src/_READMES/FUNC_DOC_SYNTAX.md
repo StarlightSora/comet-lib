@@ -13,6 +13,8 @@ where Generic2: impl some_method1 and impl some_method2 and ...,
 ...
 ```
 
+*Please open an issue if there's a logical contradiction, error or ambiguity for pragmatic use of this syntax guidelines.*
+
 ## Why Document Function Signatures?
 
 Why document function signatures if you can statically type them right in the function's declaration? Because of limitations of GDScript's type system.
@@ -142,20 +144,20 @@ The expression is evaluatated from left to right, one by one, by default. Use sq
 func do_quack(duck: Variant) -> void:
     if duck.has_method("quack"):
         if "id" in duck:
-            print("duck's id: " + id)
+			print("duck's id: " + id)
             duck.quack()
             return
     if duck is Bird:
         duck.say() # Assuming the class Bird implements a method called say
         return
-    push_error("Cast failed!")
-    assert(false, "Cast failed!")
+	push_error("Cast failed!")
+	assert(false, "Cast failed!")
 
 class_name Duck
 extends Resource
 var id = "asdf"
 func quack() -> void:
-    print("Quack!")
+	print("Quack!")
 
 do_quack(Duck.new()) # "duck's id: asdf\nQuack!"
 ```
@@ -231,20 +233,20 @@ Due to Godot's type system limitations, they are actually passed as `OuterType` 
 ```gdscript
 ## (T, T, T) -> Array<T>
 func make_array(a: Variant, b: Variant, c: Variant) -> Array[Variant]:
-    var arr: Array[Variant] = []
-    arr.push_back(a)
-    arr.push_back(b)
-    arr.push_back(c)
-    return arr
+	var arr: Array[Variant] = []
+	arr.push_back(a)
+	arr.push_back(b)
+	arr.push_back(c)
+	return arr
 
 print(str(make_array("x", "y", "z")[1])) # "y"
 
 ## (OptionalType<T>, E, bool) -> ResultType<OptionalType<T>, E>
 func option_in_result(a: OptionalType, b: Variant, ok: bool) -> ResultType:
-    if ok:
-        return ResultType.new(true, a)
-    else:
-        return ResultType.new(false, b)
+	if ok:
+		return ResultType.new(true, a)
+	else:
+		return ResultType.new(false, b)
 
 print(option_in_result(OptionalType.new("asdf"), 1234, true).unwrap().unwrap()) # "asdf"
 print(str(option_in_result(OptionalType.new("asdf"), 1234, false).unwrap_err())) # "1234"
@@ -448,9 +450,9 @@ const MAYBE_NON_ZERO_ERR_REFLECTION: Array[String] = ["Unknown", "Divide by zero
 ## where T: int or float
 ## where E: MaybeNonZeroErr
 func safe_divide(lhs: Variant, rhs: Variant) -> ResultType:
-    if rhs == 0.0:
-        return ResultType.new(false, MaybeNonZeroErr.DIV_ZERO)
-    return ResultType.new(true, lhs / rhs)
+	if rhs == 0.0:
+		return ResultType.new(false, MaybeNonZeroErr.DIV_ZERO)
+	return ResultType.new(true, lhs / rhs)
 
 print(str(safe_divide(4, 2).unwrap())) # "2"
 print(MAYBE_NON_ZERO_ERR_REFLECTION[safe_divide(3.14, 0.0).unwrap_err()]) # "Divide by 0"
@@ -458,10 +460,10 @@ print(MAYBE_NON_ZERO_ERR_REFLECTION[safe_divide(3.14, 0.0).unwrap_err()]) # "Div
 ## (T) -> OptionalType<T>
 ## where T: int or float
 func maybe_non_zero(v: Variant) -> OptionalType:
-    if v == 0:
-        return OptionalType.new(null)
-    else:
-        return OptionalType.new(v)
+	if v == 0:
+		return OptionalType.new(null)
+	else:
+		return OptionalType.new(v)
 
 print(str(maybe_non_zero(32).unwrap())) # "32"
 print(str(maybe_non_zero(0.0).is_some())) # false
@@ -469,9 +471,9 @@ print(str(maybe_non_zero(0.0).is_some())) # false
 # Bad example for production, but provided for demonstration purposes
 ## canThrow (int or float) -> void
 func throw_if_negative(v: Variant) -> void:
-    if v < 0:
-        push_error("Argument was negative!")
-        assert(false, "Argument was negative!")
+	if v < 0:
+		push_error("Argument was negative!")
+		assert(false, "Argument was negative!")
 
 throw_if_negative(3.14) # No-op
 throw_if_negative(-12) # CRASH: "Argument was negative!"
@@ -489,7 +491,7 @@ With a captured associated type, we can make instances with it:
 ## (type T?) -> T
 ## where T: default Resource, extends Object
 func instantiate_associated_type(assoc_type: Object = Resource) -> Variant:
-    return assoc_type.new()
+	return assoc_type.new()
 ```
 
 Here, we ask for an associated type that extends `Object`. If it's not given, we assume it's `Resource`.
@@ -502,21 +504,21 @@ Associated types have to be captured as `Object` when writing the actual GDScrip
 ## (Dictionary<T, U>, type A?) -> Array<A<T, U>>
 ## where A: default KVPair, extends AbstractKVPair
 func dict_to_arr(dict: Dictionary[Variant, Variant], make_as: Object = KVPair) -> Array[AbstractKVPair]:
-    var arr: Array[AbstractKVPair] = []
-    arr.resize(dict.size())
-    var i: int = 0
-    for key in dict:
-        arr[i] = make_as.new(key, dict[key])
-        i += 1
-    return arr
+	var arr: Array[AbstractKVPair] = []
+	arr.resize(dict.size())
+	var i: int = 0
+	for key in dict:
+		arr[i] = make_as.new(key, dict[key])
+		i += 1
+	return arr
 
 ## (Array<A<T, U>>) -> Dictionary<T, U>
 ## where A: extends AbstractKVPair
 func arr_to_dict(arr: Array[AbstractKVPair]) -> Dictionary[Variant, Variant]:
-    var dict: Dictionary[Variant, Variant] = { }
-    for value in arr:
-        dict.set(value.k(), value.v())
-    return dict
+	var dict: Dictionary[Variant, Variant] = { }
+	for value in arr:
+		dict.set(value.k(), value.v())
+	return dict
 ```
 
 ### Interfaces With Associated Types
