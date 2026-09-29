@@ -41,7 +41,7 @@ static func unregister(cached_children: Array[CometAudioInstCache], node: Node) 
 
 ## static (Array<CometAudioInstCache>, CometAudioPlayable) -> bool
 static func is_registered(cached_children: Array[CometAudioInstCache], node: Node) -> bool:
-	var a = cached_children.find(node)
+	var a := cached_children.find(node)
 	if a >= 0:
 		return true
 	else: return false

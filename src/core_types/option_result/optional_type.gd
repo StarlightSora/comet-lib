@@ -179,7 +179,7 @@ func get_or_insert_with(f: Callable) -> Variant:
 ## mut () -> OptionalType<T>
 func take() -> OptionalType:
 	if _exists:
-		var temp = self.duplicate()
+		var temp := self.duplicate()
 		_exists = false
 		_held = null
 		return temp
@@ -190,7 +190,7 @@ func take() -> OptionalType:
 func take_if(predicate: Callable) -> OptionalType:
 	if _exists:
 		if predicate.call(_held):
-			var temp = self.duplicate()
+			var temp := self.duplicate()
 			_exists = false
 			_held = null
 			return temp
@@ -201,7 +201,7 @@ func take_if(predicate: Callable) -> OptionalType:
 
 ## mut (T) -> OptionalType<T>
 func replace(value: Variant) -> OptionalType:
-	var temp = self.duplicate()
+	var temp := self.duplicate()
 	_exists = true
 	_held = value
 	return temp
